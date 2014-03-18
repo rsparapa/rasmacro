@@ -19,9 +19,11 @@ The output dataset contains:
    CIFi, i=1,...,K                                                 
    SEi, i=1,...,K                                                  
    SEij, 1<=i<j<=K                                                
-                                                                   
+ 
+Authored by Xu Zhang 2011
+Re-formatted by Rodney Sparapani 02/18/2014           
 ******************************************************************/
-%*imported/re-formatted/hardened 02/18/2014;
+
 %*macro (inputdata, time, event, group, covlist, outdata);
 
 %macro _cifcox(data=REQUIRED, out=REQUIRED, time=REQUIRED, 

@@ -21,10 +21,12 @@ The output dataset contains:
    survi, i=1,...,K                                               
    sei,   i=1,...,K                                               
    seij, 1<=i<j<=K                                               
-                                                                  
+
+Authored by Xu Zhang 2007
+Re-formatted by Rodney Sparapani 02/17/2014                                                                    
 *****************************************************************/
-%* imported/re-formatted/hardened 02/17/2014;
-%* ADJSURV(inputdata, time, event, group, covlist, model, outdata); 
+
+%*macro ADJSURV(inputdata, time, event, group, covlist, model, outdata); 
     
 %macro _ADJSURV(data=REQUIRED, out=REQUIRED, time=REQUIRED, 
     event=REQUIRED, group=REQUIRED, x=REQUIRED, model=1, 
