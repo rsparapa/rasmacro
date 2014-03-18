@@ -115,11 +115,13 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
         set &scratch1;
         by x y;
 /*
-        the max number of neighbors sharing a single point?
-        by experimentation with currently available maps, 
-        we use 5, but this may need to be increased
+        N=the max number of neighbors sharing a single point
+        
+        with currently available maps tested, 5 is the max observed
+        to be safe here we use 10, but this should not be considered 
+        the hypothetical upper bound
 */
-        %let N=5;
+        %let N=10;
         
         drop x y i j n n1-n&N;
     
