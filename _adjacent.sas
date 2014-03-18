@@ -24,7 +24,8 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 /*  ADJACENT Documentation
     Takes a SAS DATASET with regions and creates an adjacency file 
     for GeoBUGS based on a SAS MAP DATASET.  Can NOT handle areas
-    that have no neighbors, yet.
+    that have no neighbors, yet.  Creates the AREA. informat which
+    can be used to create an AREA from VAR=.
     
     REQUIRED Parameters
     
@@ -198,7 +199,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
     data &scratch2(index=(&var/unique));
         set &scratch2 end=last;
         drop maxnum;
-        retain maxnum 0;
+        retain maxnum 0 fmtname 'area' type 'I';
         
         &area=_n_;
         maxnum=max(num, maxnum);
@@ -209,11 +210,14 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
         end;
     run;
     
+    proc format cntlin=&scratch2(keep=fmtname type &var area rename=(&var=start area=label));
+    run;
+    
     %_lexport(append=&append, close=0, file=&file, n=,
 	/*insert=sumNumNeigh=&nobs,*/ var=num %length(&maxnum).);
 
     data &scratch0(index=(&var));
-        merge &scratch2 &scratch0;
+        merge &scratch2(drop=fmtname type) &scratch0;
         by &var;
         drop &var.save;
  
