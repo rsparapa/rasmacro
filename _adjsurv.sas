@@ -36,6 +36,8 @@ Re-formatted by Rodney Sparapani 02/17/2014
 
 %local numgroup numcov i j adj1 adj2 group iter strata1 strata2;
 
+%let covlist=%_list(&covlist); %* 08/18/15;
+
 proc means data=&inputdata noprint;
     var &group;
     output out=maxout max(&group)=numgroup;

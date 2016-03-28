@@ -1,4 +1,4 @@
-%put NOTE: You have called the macro _FILEREF, 2012-04-05.;
+%put NOTE: You have called the macro _FILEREF, 2015-08-11.;
 %put NOTE: Copyright (c) 2006-2012 Rodney Sparapani;
 %put;
 
@@ -59,13 +59,14 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
 %macro _fileref(arg1, command=, file=&arg1, filename=REQUIRED, 
-    fileref=&filename, option=, unique=0);
+    fileref=&filename, option=, unique=0, out=);
 
 filename _&sysjobid pipe "/bin/ls -1 &option &file";;
 
 %local return scratch files i;
 
-%let scratch=%_scratch;
+%if %length(&out) %then %let scratch=&out;
+%else %let scratch=%_scratch;
 
 data &scratch;
     length file $ 200;

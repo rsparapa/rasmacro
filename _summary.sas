@@ -1,5 +1,5 @@
-%put NOTE: You have called the macro _SUMMARY, 2014/01/08.;
-%put NOTE: Copyright (c) 2001-2014 Rodney Sparapani;
+%put NOTE: You have called the macro _SUMMARY, 2015/10/15.;
+%put NOTE: Copyright (c) 2001-2015 Rodney Sparapani;
 %put;
 
 /*
@@ -748,6 +748,11 @@ proc format;
 
     value $best;
     
+    value yesno
+        0='No'
+        1='Yes'
+    ;
+        
     %*produce format for the _STAT_ variable;
     value $_stat_
 	'COUNT'		='Frequency'

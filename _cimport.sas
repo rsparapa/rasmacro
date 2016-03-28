@@ -1,5 +1,5 @@
-%put NOTE: You have called the macro _CIMPORT, 2013-08-15.;
-%put NOTE: Copyright (c) 2004-2013 Rodney Sparapani;
+%put NOTE: You have called the macro _CIMPORT, 2016-02-17.;
+%put NOTE: Copyright (c) 2004-2016 Rodney Sparapani;
 %put;
 
 /*
@@ -59,6 +59,8 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
                             since it is needed for DOS line-endings:
                             for TAB delimited DLM=09
                             
+    EOL=0D                  default end of line
+                                
     FILE=INFILE             alias
 
     FIRSTOBS=2              the line on which data starts
@@ -124,7 +126,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
 %macro _cimport(file=REQUIRED, infile=&file, out=REQUIRED, attrib=, by=,
-    check=max, day0='01JAN1960'd, dlm=2C, drop=, informat=, length=200, 
+    check=max, day0='01JAN1960'd, dlm=2C, eol=0d, drop=, informat=, length=200, 
     linesize=32767, ls=&linesize, numdates=, firstobs=2, header=1, obs=max, 
     nvars=, if=, index=, keep=, rename=, where=, log=%_null);
 
@@ -140,7 +142,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 %if "%_datatyp(&header)"="NUMERIC" %then %do;
 data _null_;
-    infile "&infile" dsd firstobs=&header obs=&header ls=&ls dlm="0d&dlm"x  
+    infile "&infile" dsd firstobs=&header obs=&header ls=&ls dlm="&eol.&dlm"x  
         %if %length(&nvars)=0 %then missover;;
     length var $ 64;
     i=0;
@@ -201,7 +203,7 @@ run;
 data _null_;
     attrib &attrib;
     informat &informat;
-    infile "&infile" dsd firstobs=&firstobs obs=&check ls=&ls dlm="0d&dlm"x 
+    infile "&infile" dsd firstobs=&firstobs obs=&check ls=&ls dlm="&eol.&dlm"x 
         %if %length(&nvars)=0 %then missover;;
 
     input %do j=1 %to &i; &&var&j &&type&j %end;;
@@ -224,7 +226,7 @@ data &out;
             
     attrib &attrib;
     informat &informat;
-    infile "&infile" dsd firstobs=&firstobs obs=&obs ls=&ls dlm="0d&dlm"x end=_last_
+    infile "&infile" dsd firstobs=&firstobs obs=&obs ls=&ls dlm="&eol.&dlm"x end=_last_
         %if %length(&nvars)=0 %then missover;;
 
     input %do i=1 %to &var0; &&var&i &&type&i %end;;

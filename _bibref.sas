@@ -1,5 +1,5 @@
-%put NOTE: You have called the macro _BIBREF, 2012-06-14.;
-%put NOTE: Copyright (c) 2011-2012 Rodney Sparapani;
+%put NOTE: You have called the macro _BIBREF, 2016-02-26.;
+%put NOTE: Copyright (c) 2011-2016 Rodney Sparapani;
 %put;
 
 /*
@@ -21,7 +21,8 @@ along with this file; see the file COPYING.  If not, write to
 the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
-%macro _bibref(infile=REQUIRED, file=REQUIRED, debug=, log=);
+%macro _bibref(infile=REQUIRED, file=REQUIRED, debug=, nonotes=0,
+    upcase=0, log=);
 
 %_require(&file &infile);
 
@@ -31,10 +32,10 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 %let scratch=%_scratch;
 
-%if "&file"="&infile" %then x "dos2unix -o &file";
-%else x "dos2unix -n &infile &file";;
+%if "&file"="&infile" %then x "dos2unix -o &file 2> /dev/null";
+%else x "dos2unix -n &infile &file 2> /dev/null";;
 
-x "dos2unix -c Mac -o &file";
+x "dos2unix -c Mac -o &file 2> /dev/null";
 
 proc format;
     value yearz
@@ -235,17 +236,62 @@ data _null_;
 
 run;
 
-x "sed 's/\\u/\\\""{u}/g' &file > &sysjobid..txt";
+%* sed has no 1 or more wild card, +, so use \{1,\};
+
+%* u diaresis;
+x "sed 's/\\u\([^r][^l]\)/\\\""{u}\1/g' &file > &sysjobid..txt";
 x "mv -f &sysjobid..txt &file";
 
 x "sed 's/\\{u}/\\\""{u}/g' &file > &sysjobid..txt";
 x "mv -f &sysjobid..txt &file";
 
+%* o diaresis;
 x "sed 's/\\o/\\\""{o}/g' &file > &sysjobid..txt";
 x "mv -f &sysjobid..txt &file";
 
 x "sed 's/\\{o}/\\\""{o}/g' &file > &sysjobid..txt";
 x "mv -f &sysjobid..txt &file";
+
+%* RefWorks uses underscores which LaTeX thinks are math mode subscript operators;
+x "sed 's/ *<last_page> */-/g' &file > &sysjobid..txt";
+x "mv -f &sysjobid..txt &file";
+
+x "sed 's/publication_type/publication-type/g' &file > &sysjobid..txt";
+x "mv -f &sysjobid..txt &file";
+
+x "sed 's/full_text/full-text/g' &file > &sysjobid..txt";
+x "mv -f &sysjobid..txt &file";
+
+/* too dangerous
+%* RefWorks will occasionally produce imbalanced curly braces;
+x "sed 's/{{/{/g' &file > &sysjobid..txt";
+x "mv -f &sysjobid..txt &file";
+
+x "sed 's/}}/}/g' &file > &sysjobid..txt";
+x "mv -f &sysjobid..txt &file";
+*/
+
+%if &nonotes %then %do;
+%* RefWorks produces notes which are rarely wanted;    
+x "sed 's/note={[^\\P]/OPTnote={/g' &file > &sysjobid..txt";
+x "mv -f &sysjobid..txt &file";
+%end;
+
+%if &upcase %then %do;
+%* RefWorks defaults to what BibTeX thinks is all lower case titles;
+x "sed 's/title={\(.*\)}/title={{\1}}/g' &file > &sysjobid..txt";
+x "mv -f &sysjobid..txt &file";
+
+x "sed 's/ *}}/}}/g' &file > &sysjobid..txt";
+x "mv -f &sysjobid..txt &file";
+
+%* Journals that RefWorks will lower case by default;
+x "sed 's/Statistics in medicine/Statistics in Medicine/g' &file > &sysjobid..txt";
+x "mv -f &sysjobid..txt &file";
+
+x "sed 's/Statistical methods in medical research/Statistical Methods in Medical Research/g' &file > &sysjobid..txt";
+x "mv -f &sysjobid..txt &file";
+%end;
 
 %if %length(&log) %then %_printto;
 

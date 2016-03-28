@@ -1,5 +1,5 @@
-%put NOTE: You have called the macro _2SLS, 2011-12-22.;
-%put NOTE: Copyright (c) 2009-2011 Rodney Sparapani;
+%put NOTE: You have called the macro _2SLS, 2014-08-30.;
+%put NOTE: Copyright (c) 2009-2014 Rodney Sparapani;
 %put;
 
 /*
@@ -33,8 +33,8 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 %local scratch scratch1 scratch2 i j conf inst;
 %let scratch=%_scratch;
-%let z=%lowcase(&z);
-%let x=%lowcase(&x);
+%let z=%lowcase(%_list(&z)); %*21AUG14;
+%let x=%lowcase(%_list(&x)); %*21AUG14;
      
 %if %length(&title)=0 %then %do;
     %_title;
@@ -108,7 +108,7 @@ title&title 'Stage 1';
 proc glm &stage1 data=&scratch outstat=&out(where=(_type_^='SS3'));
     %*where &where1;
     class &class1;
-    model &t=&conf &z / solution;
+    model &t=&z &conf / solution;
     output out=&scratch2(keep=&by hat_&t) predicted=hat_&t;
 run;   
      
@@ -159,7 +159,7 @@ title&title 'Stage 2';
 %if %length(&subject) %then %do;
 proc genmod &stage2;
     class &class2 %scan(&subject, 1, /);
-    model &y=&x hat_&t / type3 %if %length(&link) %then link=&link;;
+    model &y=hat_&t &x / type3 %if %length(&link) %then link=&link;;
     repeated subject=&subject;
     make 'Type3' out=&out;
     output out=&scratch predicted=hat_&y;
@@ -168,7 +168,7 @@ run;
 %else %do;
 proc glm &stage2 outstat=&out;
     class &class2;
-    model &y=&x hat_&t / solution;
+    model &y=hat_&t &x / solution;
     output out=&scratch predicted=hat_&y;
 run;    
 %end;
