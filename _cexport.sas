@@ -1,5 +1,5 @@
-%put NOTE: You have called the macro _CEXPORT, 2009-07-06.;
-%put NOTE: Copyright (c) 2004-2009 Rodney Sparapani;
+%put NOTE: You have called the macro _CEXPORT, 2016-04-11.;
+%put NOTE: Copyright (c) 2004-2016 Rodney Sparapani;
 %put;
 
 /*
@@ -27,7 +27,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
     tolerate it as well.  However, Stata treats any non-numeric text 
     (besides .) as a string, while spreadsheets treat as missing.  
     So . is used for missing data and ._, .A, ..., .Z are also 
-    handled as missing.
+    handled as missing.  But R prefers NA; see the MISSING= variable.
 
     Other Stata notes: Stata only supports integers to 9 digits of
     precision; beyond that strings can be used if the numeric quality
@@ -61,6 +61,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
     NAMES=1             produces variable names on the first
                         line of CSV file, if set to anything
+    
     NFORMAT=best9.      default format for numeric variables
 
     NNOFMT=1            by default, numeric formats from the SAS Dataset
@@ -70,6 +71,8 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
     NUM=                default list of numeric variables to be included,
                         use _numeric_ for all 
                             
+    MISSING=.           numeric missing value character, defaults to .
+    
     Common OPTIONAL Parameters
     
     IF=
@@ -80,7 +83,8 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
 %macro _cexport(file=REQUIRED, data=&syslast, cformat=$quote24., char=, cnofmt=0,
-    eol=, nformat=best9., nnofmt=1, num=, names=1, max=16384, where=, if=&where, log=);
+    eol=, nformat=best9., nnofmt=1, num=, names=1, max=16384, missing=.,
+    where=, if=&where, log=);
 
 %_require(&file);
 
@@ -112,7 +116,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
             %let var&var0=%lowcase(&arg);
         
             %if &var0>(&num0-&cor0) %then %let format&var0=&cformat;
-            %else %let format&var0=stata.;
+            %else %let format&var0=missing.;
         %end;
     %end;
 
@@ -146,8 +150,8 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 %end;
 
 proc format;
-    value stata
-        ._,.A-.Z,.='.'
+    value missing
+        ._,.A-.Z,.="&missing"
         other=[&nformat]
     ;
 run;
