@@ -1,5 +1,5 @@
-%put NOTE: You have called the macro _REORDER, 2011-04-20.;
-%put NOTE: Copyright (c) 2006-2011 Rodney Sparapani;
+%put NOTE: You have called the macro _REORDER, 2016-05-23.;
+%put NOTE: Copyright (c) 2006-2016 Rodney Sparapani;
 %put;
 
 /*
@@ -174,7 +174,7 @@ run;
 
 %let fmtname=&fmtname..;
 %let data=%sysfunc(open(&out));
-%let label=%sysfunc(varlabel(&data, %sysfunc(varnum(&data, &var))));
+%let label=%qsysfunc(varlabel(&data, %sysfunc(varnum(&data, &var))));
 %let temp=%sysfunc(close(&data));
 
 data &out;
