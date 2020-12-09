@@ -1,5 +1,5 @@
-%put NOTE: You have called the macro _MIN, 2005-12-01.;
-%put NOTE: Copyright (c) 2001-2005 Rodney Sparapani;
+%put NOTE: You have called the macro _MIN, 2017-11-08.;
+%put NOTE: Copyright (c) 2001-2017 Rodney Sparapani;
 %put;
 
 /*
@@ -33,14 +33,14 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 %macro _min(arg1, arg2);
     %if %length(&arg2)=0 %then %eval(&arg1);
     %else %if %length(&arg1)=0 %then %eval(&arg2);
-    %else %if &arg1<=&arg2 %then %eval(&arg1);
+    %else %if (&arg1)<=(&arg2) %then %eval(&arg1);
     %else %eval(&arg2);
 %mend _min;
 
 /*
-%put %_min(7, 8);
-%put %_min(9);
-%put %_min( , 9);
-%put %_min(a, 9);
-%put %_min(a, b);
+%put MIN=%_min(7+2, 8);
+%put MIN=%_min(9);
+%put MIN=%_min( , 9);
+%put MIN=%_min(g, 9);
+%put MIN=%_min(a, b);
 */

@@ -1,5 +1,5 @@
-%put NOTE: You have called the macro _CEXPORT, 2016-04-11.;
-%put NOTE: Copyright (c) 2004-2016 Rodney Sparapani;
+%put NOTE: You have called the macro _CEXPORT, 2020-04-02.;
+%put NOTE: Copyright (c) 2004-2020 Rodney Sparapani;
 %put;
 
 /*
@@ -92,8 +92,27 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
     
 %if %length(&log) %then %_printto(log=&log);
 
-%local nobs i j arg args num0 var0 cor0 dsid;
+%local nobs i j arg args num0 var0 cor0 dsid temp;
 %let nobs=%_nobs(data=&data);
+
+%do i=1 %to %_count(&num);
+    %let var=%scan(&num, &i, %str( ));
+    %let temp=%_blist(&var, data=&data, nofmt=&nnofmt);
+    %if %length(&temp)=0 %then %do;
+        %put ERROR: variable NUM=&var is not present on data set &data;  
+        %_abend;
+    %end;
+%end;
+
+%do i=1 %to %_count(&char);
+    %let var=%scan(&char, &i, %str( ));
+    %let temp=%_blist(&var, data=&data, nofmt=&nnofmt);
+    %if %length(&temp)=0 %then %do;
+        %put ERROR: variable CHAR=&var is not present on data set &data;  
+        %_abend;
+    %end;
+%end;
+
 %let num=%_blist(&num, data=&data, nofmt=&nnofmt);
 %let num0=%_count(&num);
 %let var=&num %_blist(&char, data=&data, nofmt=&cnofmt);

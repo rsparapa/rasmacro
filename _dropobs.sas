@@ -1,5 +1,5 @@
-%put NOTE: You have called the macro _DROPOBS, 2015-08-07.;
-%put NOTE: Copyright (c) 2015 Rodney Sparapani;
+%put NOTE: You have called the macro _DROPOBS, 2016-09-09.;
+%put NOTE: Copyright (c) 2015-2016 Rodney Sparapani;
 %put;
 
 /*
@@ -29,17 +29,21 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
     DATA=_LAST_     default SAS DATASET to use
 
     FREQ=noprint    default to not printing PROC FREQ output
+
+    IGNORE=         ignore the missingness of these variables
                         
 */
 
-%macro _DROPOBS(data=&syslast, out=REQUIRED, freq=noprint, log=);
+%macro _DROPOBS(data=&syslast, out=REQUIRED, freq=noprint,
+    ignore=, log=);
 
 %_require(&out)
     
 %if %length(&log) %then %_printto(log=&log);
 
-%let data=%upcase(&data);
-
+%*let data=%upcase(&data);
+%let ignore=%lowcase(&ignore);
+    
 proc format;
     value missing
         ._, ., .A-.Z='Missing'
@@ -55,9 +59,15 @@ run;
 %local char ccount num ncount missing mcount scratch var;
 
 %let num=%_blist(data=&data, var=_numeric_, nofmt=1);
-%let ncount=%_count(&num);
-
 %let char=%_blist(data=&data, var=_character_, nofmt=1);
+
+%do i=1 %to %_count(&ignore);
+    %let var=%scan(&ignore, &i, %str( ));
+    %let num=%_tranwrd(&num, &var, %str( ));
+    %let char=%_tranwrd(&char, &var, %str( ));
+%end;
+
+%let ncount=%_count(&num);
 %let ccount=%_count(&char);
 
 proc freq data=&data;
@@ -76,6 +86,7 @@ proc freq data=&data;
 run;
 
 %let mtotal=0;
+%let missing=0;
 
 %do i=1 %to &ncount+&ccount;
     %let var=%scan(&num &char, &i, %str( ));
@@ -84,9 +95,7 @@ run;
 
     %if &mcount=1 %then %do;
         %let mtotal=%eval(&mtotal+1);
-
-        %if &i<=&ncount %then %let missing=&missing n(&var) &;
-        %else %let missing=&missing ''<&var &;
+        %let missing=&missing,&var;
     %end;
 %end;
  
@@ -95,10 +104,20 @@ run;
 %put Number of variables: %eval(&ncount+&ccount);
 %put Number with missing obs: &mtotal;
 
-data &out;
+data &out(drop=_missing_) missing;
     set &data;
-    %if %length(&missing) %then if &missing.1;;
+    %if &mtotal>0 %then _missing_=nmiss(&missing);
+    %else _missing_=0;;
+
+    if _missing_ then output missing;
+    else output &out;
 run;
+
+proc freq data=missing;
+    tables _missing_;
+run;
+
+%let syslast=&out;
 
 %mend _DROPOBS;
 

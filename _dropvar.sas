@@ -1,4 +1,4 @@
-%put NOTE: You have called the macro _DROPVAR, 2015-07-17.;
+%put NOTE: You have called the macro _DROPVAR, 2016-10-26.;
 %put NOTE: Copyright (c) 2014-2015 Rodney Sparapani;
 %put;
 
@@ -22,15 +22,18 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
 /*  _DROPVAR Documentation
-    Drop variables that are completely missing.
+    Drop variables that are completely missing or that are always
+    the same value (based on their current format if any).
     
     NAMED Parameters
                 
     DATA=_LAST_     default SAS DATASET to use
-                        
+
+    NONMISSING=0    default to check for missing only.  If not 0, then
+                    check for non-missing too based on current format.
 */
 
-%macro _DROPVAR(data=&syslast, out=REQUIRED, log=);
+%macro _DROPVAR(data=&syslast, out=REQUIRED, nonmissing=0, log=);
 
 %_require(&out)
     
@@ -50,7 +53,7 @@ proc format;
     ;
 run;
 
-%local char ccount num ncount missing mcount scratch var;
+%local char ccount cclause num ncount nclause missing mcount scratch var;
 
 %let num=%_blist(data=&data, var=_numeric_, nofmt=1);
 %let ncount=%_count(&num);
@@ -58,17 +61,27 @@ run;
 %let char=%_blist(data=&data, var=_character_, nofmt=1);
 %let ccount=%_count(&char);
 
+%if "&nonmissing"^="0" %then %do;
+    %let nclause=percent=100;
+    %let cclause=percent=100;
+%end;
+    
 proc freq data=&data;
 %do i=1 %to &ncount+&ccount;
     %let var=%scan(&num &char, &i, %str( ));
 
+    %if "&nonmissing"="0" %then %do;
+        %let nclause=percent=100 & put(&var,  missing11.)='Missing';
+        %let cclause=percent=100 & put(&var, $missing11.)='Missing';
+    %end;
+
     %if &i<=&ncount %then %do;
-    format &var missing11.; 
-    tables &var / missing noprint out=&var(where=(percent=100 & put(&var, missing11.)='Missing'));
+    %if "&nonmissing"="0" %then format &var missing11.;; 
+    tables &var / missing noprint out=&var(where=(&nclause));
     %end;
     %else %do;
-    format &var $missing11.; 
-    tables &var / missing noprint out=&var(where=(percent=100 & put(&var, $missing11.)='Missing'));
+    %if "&nonmissing"="0" %then format &var $missing11.;; 
+    tables &var / missing noprint out=&var(where=(&cclause));
     %end;
 %end;
 run;
@@ -94,4 +107,21 @@ run;
 
 %*VALIDATION TEST STREAM;
 /* un-comment to re-validate
+data check;
+    do i=1 to 10;
+        j=i;
+        k=i**2;
+        l=.;
+        m=1;
+        n=' ';
+        o=put(i, 2.);
+        q='a';
+        
+        output;
+    end;
+run;
+
+%_dropvar(data=check, out=missing); *drop l and n;
+    
+%_dropvar(data=check, out=nonmissing, nonmissing=); *also drop m and q;
 */

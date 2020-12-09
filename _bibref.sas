@@ -1,5 +1,5 @@
-%put NOTE: You have called the macro _BIBREF, 2016-02-26.;
-%put NOTE: Copyright (c) 2011-2016 Rodney Sparapani;
+%put NOTE: You have called the macro _BIBREF, 2018-05-18.;
+%put NOTE: Copyright (c) 2011-2018 Rodney Sparapani;
 %put;
 
 /*
@@ -21,8 +21,9 @@ along with this file; see the file COPYING.  If not, write to
 the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
-%macro _bibref(infile=REQUIRED, file=REQUIRED, debug=, nonotes=0,
-    upcase=0, log=);
+%macro _bibref(infile=REQUIRED, file=REQUIRED, debug=, latex=,
+    nomonth=1, nonote=1, nopmid=1, nourl=0,
+    endnote=1, refworks=1, upcase=1, log=);
 
 %_require(&file &infile);
 
@@ -32,10 +33,26 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 %let scratch=%_scratch;
 
+/*
+can not count on dos2unix being available
+
 %if "&file"="&infile" %then x "dos2unix -o &file 2> /dev/null";
 %else x "dos2unix -n &infile &file 2> /dev/null";;
 
 x "dos2unix -c Mac -o &file 2> /dev/null";
+*/
+
+%if "&file"^="&infile" %then %do;
+    x "sed 's/\r\n\{0,1\}/\n/g' &infile > &file";
+%end;
+
+x "sed '/^$/d' &file > &sysjobid..txt";
+x "mv -f &sysjobid..txt &file";
+
+%if &endnote %then %do;
+x "sed 's/{\(RN[1-9]\)/{EndNote:\1/' &file > &sysjobid..txt";
+x "mv -f &sysjobid..txt &file";
+%end;
 
 proc format;
     value yearz
@@ -44,6 +61,63 @@ proc format;
     ;
 run;
 
+%if &refworks=1 %then %do;
+         
+data refworks(index=(oldref/unique));
+    length oldref $ 200;
+    infile "&file" line=line;
+    input @'@' oldref;
+
+    retain oldline 0;
+    
+    if lowcase(oldref) in:('article', 'book', 'inbook', 'inproceedings', 'misc', 'techreport');   
+
+    oldline=oldline+line;
+run;
+       
+data author(index=(oldref/unique));
+    length oldref $ 200;
+    infile "&file" line=line;
+    input @'@' oldref;
+
+    retain authline 0;
+    
+    if lowcase(oldref) in:('article', 'book', 'inbook', 'inproceedings', 'misc', 'techreport');   
+
+    input @'author' @;
+
+    authline=authline+line;
+run;
+
+data refworks;
+    merge refworks author;
+    by oldref;
+run;
+
+%_sort(data=refworks, out=refworks, by=descending oldline, sort=force);
+
+data refworks;
+    set refworks;
+    retain saveline;
+    drop saveline;
+
+    nextline=saveline;
+    saveline=oldline;
+run;
+
+%_sort(data=refworks, out=refworks, by=oldline);
+
+data refworks(index=(oldref/unique));
+    set refworks;
+    retain saveauth;
+    drop saveauth;
+
+    if n(authline) then saveauth=authline;
+    else authline=saveauth;
+run;
+
+%end;
+
 data &scratch(index=(newref));
     length name name1 name2 oldref newref reftype $ 200;
     infile "&file";
@@ -51,11 +125,19 @@ data &scratch(index=(newref));
     input @'@' oldref;
 
     if lowcase(oldref) in:('article', 'book', 'inbook', 'inproceedings', 'misc', 'techreport');   
-    
+
+    %if &refworks=1 %then %do;
+        set refworks key=oldref/unique;
+
+        if n(authline) & (nextline=. | authline<nextline);
+    %end;
+
     input @'author' @;
+
     input @'=' @;
     input @'{' @;
     input name &;      
+
     input @'year' @;
     input @'=' @;
     input @'{' @;
@@ -262,6 +344,14 @@ x "mv -f &sysjobid..txt &file";
 x "sed 's/full_text/full-text/g' &file > &sysjobid..txt";
 x "mv -f &sysjobid..txt &file";
 
+%*Unicode underscores are annoying;
+x "sed 's/\xc2\xa0/ /g' &file > &sysjobid..txt";
+x "mv -f &sysjobid..txt &file";
+
+%* & is often used in place of and;
+x "sed 's/\&/and/g' &file > &sysjobid..txt";
+x "mv -f &sysjobid..txt &file";
+
 /* too dangerous
 %* RefWorks will occasionally produce imbalanced curly braces;
 x "sed 's/{{/{/g' &file > &sysjobid..txt";
@@ -271,26 +361,70 @@ x "sed 's/}}/}/g' &file > &sysjobid..txt";
 x "mv -f &sysjobid..txt &file";
 */
 
-%if &nonotes %then %do;
+%if &nopmid %then %do;
+%* store PMIDs in note fields; 
+x "sed 's/note={P/OPTnote={P/g' &file > &sysjobid..txt";
+x "mv -f &sysjobid..txt &file";
+%end;
+
+%if &nourl %then %do;
+%* store URLs in note fields encased in \url{} and/or []; 
+x "sed 's/note={[[\\]/OPTnote={/g' &file > &sysjobid..txt";
+x "mv -f &sysjobid..txt &file";
+%end;
+
+%if &nonote %then %do;
 %* RefWorks produces notes which are rarely wanted;    
-x "sed 's/note={[^\\P]/OPTnote={/g' &file > &sysjobid..txt";
+x "sed 's/note={[^P[\\]/OPTnote={/g' &file > &sysjobid..txt";
+x "mv -f &sysjobid..txt &file";
+%end;
+
+%if &nomonth %then %do;
+%* RefWorks produces month which is rarely wanted;    
+x "sed 's/month={/OPTmonth={/g' &file > &sysjobid..txt";
 x "mv -f &sysjobid..txt &file";
 %end;
 
 %if &upcase %then %do;
 %* RefWorks defaults to what BibTeX thinks is all lower case titles;
-x "sed 's/title={\(.*\)}/title={{\1}}/g' &file > &sysjobid..txt";
+x "sed 's/title *=[ \t]*{\(.*\)}/title={{\1}}/g' &file > &sysjobid..txt";
 x "mv -f &sysjobid..txt &file";
 
 x "sed 's/ *}}/}}/g' &file > &sysjobid..txt";
 x "mv -f &sysjobid..txt &file";
 
+/*
 %* Journals that RefWorks will lower case by default;
 x "sed 's/Statistics in medicine/Statistics in Medicine/g' &file > &sysjobid..txt";
 x "mv -f &sysjobid..txt &file";
 
 x "sed 's/Statistical methods in medical research/Statistical Methods in Medical Research/g' &file > &sysjobid..txt";
 x "mv -f &sysjobid..txt &file";
+*/
+%end;
+
+%if %length(&latex)>0 %then %do;
+data _null_;
+    file "&latex";
+
+put '\documentclass{article}';
+put '\usepackage{hyperref}';
+put '\usepackage{natbib}';
+put '\begin{document}';
+
+%do i=1 %to %_count(&oldref, split=%str(,));
+        put "\citep{&&newref&i}";
+%end;
+
+put "\bibliography{&file}";
+put '\bibliographystyle{plain}';
+put '\end{document}';
+run;
+
+x "pdflatex &latex >& /dev/null";
+x "bibtex %_lib(&latex) >& /dev/null";
+x "pdflatex &latex >& /dev/null";
+x "pdflatex &latex >& /dev/null";
 %end;
 
 %if %length(&log) %then %_printto;

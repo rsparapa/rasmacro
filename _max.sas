@@ -1,5 +1,5 @@
-%put NOTE: You have called the macro _MAX, 2005-12-01.;
-%put NOTE: Copyright (c) 2001-2005 Rodney Sparapani;
+%put NOTE: You have called the macro _MAX, 2017-11-08.;
+%put NOTE: Copyright (c) 2001-2017 Rodney Sparapani;
 %put;
 
 /*
@@ -33,14 +33,14 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 %macro _max(arg1, arg2);
     %if %length(&arg2)=0 %then %eval(&arg1);
     %else %if %length(&arg1)=0 %then %eval(&arg2);
-    %else %if &arg1>=&arg2 %then %eval(&arg1);
+    %else %if (&arg1)>=(&arg2) %then %eval(&arg1);
     %else %eval(&arg2);
 %mend _max;
 
 /*
-%put %_max(7, 8).;
-%put %_max(9);
-%put %_max( , 9);
-%put %_max(a, 9);
-%put %_max(a, b);
+%put MAX=%_max(7+2, 8);
+%put MAX=%_max(9);
+%put MAX=%_max( , 9);
+%put MAX=%_max(a, 9);
+%put MAX=%_max(a, b);
 */

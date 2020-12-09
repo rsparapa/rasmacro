@@ -1,5 +1,5 @@
-%put NOTE: You have called the macro ADJACENT, 2014-03-18;
-%put NOTE: Copyright (c) 2010-2014 Rodney Sparapani;
+%put NOTE: You have called the macro ADJACENT, 2018-01-13;
+%put NOTE: Copyright (c) 2010-2018 Rodney Sparapani;
 %put;
 
 /*
@@ -40,6 +40,9 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
     
     DATA=_LAST_     default SAS DATASET to be used
      
+    ADJACENT=       name of adjacency SAS DATASET to create, if any
+                    if so, then produce an alternative format for FILE
+    
     APPEND=         if specified, append to a file, rather than create
                     see FILE= below
 
@@ -61,7 +64,8 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
 %macro _adjacent(data=&syslast, out=REQUIRED, var=REQUIRED, append=REQUIRED, 
-    area=area, close=1, file=&append, weight=1, map=MAPS.USCOUNTY, length=,
+    area=area, close=1, file=&append, weight=1, map=MAPS.USCOUNTY, adjacent=,
+    length=,
     attrib=, by=, drop=, firstobs=, if=, keep=, obs=, rename=, sort=, sortseq=, 
     where=); 
 
@@ -178,24 +182,23 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
     run;
     
     %_sort(data=&scratch2, out=&scratch2, by=&var &var.adj, sort=nodupkey);
-     
+   
     data &scratch0;
         merge &scratch0 &scratch2;
         by &var;
     run;
-       
+         
     data &scratch2;
         set &scratch0;
         by &var; 
-        where &var.adj^=&miss & &var.adj^=&var;
         
         %_retain(var=num=0, by=&var);
         
-        num+1;
+        if &var.adj^=&miss & &var.adj^=&var then num+1;
         
         if last.&var;
     run;
- 
+
     data &scratch2(index=(&var/unique));
         set &scratch2 end=last;
         drop maxnum;
@@ -232,14 +235,37 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
         end;
         else adj=.;
     run;
-    
+
     data &scratch2;
         set &scratch0;
         where num & &var.adj^=&var;
+        *where num=0 | &var.adj^=&var;
     run;
 
     %let nobs=%_nobs(data=&scratch2);
 
+%if %length(&adjacent) %then %do;
+    data &adjacent(index=(&area));
+        set &scratch0;
+        where num=0 | &var.adj^=&var;
+    run;
+        
+data _null_;
+    set &adjacent;
+    by &area;
+    file "&file";
+    if _n_=1 then put "&maxarea";
+    a=&area-1;
+        if first.&area then put a %length(&maxarea).-l ' '
+            num %length(&maxnum).-l ' ' @;
+        if num>0 then do;
+            b=adj-1;
+            if a^=b then put b %length(&maxarea).-l ' ' @;
+        end;
+        if last.&area then put;
+run;
+%end;
+%else %do;
     /*
     %let hues=r br o g b p gr pk ol v y lg yg;
     %let pres=pa bi li mo me st da de vi vpa vli vda vde;
@@ -259,10 +285,11 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
         %end;
     %end;
     */
-    
+ 
     %if %length(&weight) %then %_lexport(append=&file, close=&close, 
         var=adj %length(&maxarea). weights %length(&weight).);
     %else %_lexport(append=&file, close=&close, var=adj %length(&maxarea).);
+%end;
 
     data &scratch0;
         set &scratch0;

@@ -1,5 +1,5 @@
-%put NOTE: You have called the macro _SORT, 2008-03-19;
-%put NOTE: Copyright (c) 2001-2008 Rodney Sparapani;
+%put NOTE: You have called the macro _SORT, 2016-11-16;
+%put NOTE: Copyright (c) 2001-2016 Rodney Sparapani;
 %put;
 
 /*
@@ -90,12 +90,21 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 %let outopt=%_option(&out);
 %if %length(&index)    %then %let outopt=&outopt index=(&index);
 
-%let sort=%upcase(&sort %_ifelse(%length(&sortseq),%str(SORTSEQ=)&sortseq));
+%let sortseq=%upcase(&sortseq);
+
+%if "&sortseq "^=" " %then %let sort=&sort SORTSEQ=&sortseq;
 
 %if %length(&sortedby) %then %do;
-    %let sortedby=&sortedby%_ifelse(%length(&sortseq),/&sortseq);
+    %if "&sortseq "="ASCII " | "&sortseq "="EBCDIC " %then %let sortedby=&sortedby/&sortseq;
     %let outopt=&outopt sortedby=&sortedby;
 %end;
+
+/*
+%if %length(&sortedby) %then %do;
+    %let sortedby=&sortedby%_ifelse("&sortseq"="ASCII" | "&sortseq"="EBCDIC",/&sortseq);
+    %let outopt=&outopt sortedby=&sortedby;
+%end;
+*/
 
 %let out=%_lib(&out).%_data(&out);
 %let outopt=&out (&outopt);

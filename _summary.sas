@@ -1,5 +1,5 @@
-%put NOTE: You have called the macro _SUMMARY, 2015/10/15.;
-%put NOTE: Copyright (c) 2001-2015 Rodney Sparapani;
+%put NOTE: You have called the macro _SUMMARY, 2020/04/22.;
+%put NOTE: Copyright (c) 2001-2020 Rodney Sparapani;
 %put;
 
 /*
@@ -895,10 +895,10 @@ proc format;
 	'MHRRC1CI'	="MH Adj RR1 &_.% CI"
 	'_MHRRC2_'	='MH Adj RR2'
 	'MHRRC2CI'	="MH Adj RR2 &_.% CI"
-	'_RRC1_'	='RR1'
-	'RRC1CI'	="RR1 &_.% CI"
-	'_RRC2_'	='RR2'
-	'RRC2CI'	="RR2 &_.% CI"
+	'_RRC1_'	='RR'
+	'RRC1CI'	="RR &_.% CI"
+	'_RRC2_'	='RR'
+	'RRC2CI'	="RR &_.% CI"
 	'_RROR_'	='OR'
 	'RRORCI'	="OR &_.% CI"
 	'_PCHI_'	='Pearson Chisq'
@@ -965,7 +965,7 @@ data &out %if %length(&by) %then (sortedby=&by);;
     format _column _column.;
     
     select;
-    %if &col1=1 %then %do;
+    %if "&col1"="1" %then %do;
         when(1) _column=1;
     %end;
     %else %do j=1 %to &col0-1;
@@ -1491,7 +1491,8 @@ run;
 
         %if %index(&&stat&i, KAPPA) | %index(&&stat&i, MCNEM) %then %let order&i=;
         %else %if "%upcase(&&format&i)"="YESNO." & %length(&&order&i)=0 & 
-            %index(&&stat&i, COUNT) %then %let order&i=Yes\No;
+            %index(&&stat&i, COUNT) & %index(&&stat&i, MEAN)=0 %then
+            %let order&i=Yes\No;
             
         %if %length(&&char&i) | %length(&&order&i) %then %do;
             %_reorder(data=&out, out=&scratch, by=&by, format=%scan(&&format&i &&char&i, 1, %str( )), 
@@ -1719,8 +1720,11 @@ run;
 		%*create the WEIGHT dataset variable so PROC MEANS can calculate N correctly;
                 _weight_=&&weight&i; 
                 
+		%*create the _MISSING dataset variable so NMISS can be weighted; 
+                %if "&&weight&i"^="1" %then _missing=_weight_*nmiss(&&var&i);;
+                
                 %*keep only the variables that you need;
-                keep %_by(&by) &&var&i &&id&i _weight_; 
+                keep %_by(&by) &&var&i &&id&i _weight_ %if "&&weight&i"^="1" %then _missing;; 
 
                 %if &j=1 %then %do;
                     %*set the label for the variable whether it was part of the macro call or
@@ -1766,6 +1770,33 @@ run;
             &debug.%_printto(file=%_null);
             
 	    %*call PROC UNIVARIATE with the statistics it needs to compute;
+            %if "&&weight&i"^="1" %then %do;
+            %*special handling so that _MISSING is weighted correctly;
+	    proc univariate round=&round vardef=&vardef mu0=&&mu0&i data=&&data&i;
+                id &&id&i;
+                by %_by(&by, proc=1);
+		var _missing;
+                output out=_missing sum=_missing;
+	    run;
+
+            %* PCTLDEF not allowed with a WEIGHT statement;
+            proc univariate /*pctldef=&pctldef*/ round=&round vardef=&vardef mu0=&&mu0&i
+                %if %length(&debug) %then plot;
+                %if %index(&univstat, PROBSW) %then normal;
+                data=&&data&i;
+                
+                id &&id&i;
+                by %_by(&by, proc=1);
+                weight _weight_;;
+		var &&var&i;
+                output out=col&j sumwgt=_nonmiss &univout;
+	    run;
+
+            data col&j;
+                merge col&j _missing;
+            run;
+            %end;
+            %else %do;
 	    proc univariate pctldef=&pctldef round=&round vardef=&vardef mu0=&&mu0&i
                 %if %length(&debug) %then plot;
                 %if %index(&univstat, PROBSW) %then normal;
@@ -1773,11 +1804,10 @@ run;
                 
                 id &&id&i;
                 by %_by(&by, proc=1);
-                %if "&&weight&i"^="1" %then weight _weight_;;
 		var &&var&i;
                 output out=col&j sumwgt=_nonmiss &univout nmiss=_missing;
 	    run;
-
+            %end;
                 %*Requesting IQR implies computing Box-Whisker stats 1.5*IQR and 3*IQR;
                 %if %_indexw(&&stat&i, IQR) %then %do;
                     data col&j;
@@ -1963,6 +1993,14 @@ run;
                     %end;
                     %else col&j=" ";;
 		run;
+
+                %if "%upcase(&&means&i)"="MISSING" %then %do;
+                data col&j(index=(%_by(&by)&&var&i.._index_=(%_by(&by) &&var&i _index_)));
+                    set col&j;
+                    by %_by(&by) &&var&i _index_;
+                    if &&var&i=. & ^first._index_ then delete;
+                run;
+                %end;
 	%end;
 
 	data &&data&i;
