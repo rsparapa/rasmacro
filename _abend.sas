@@ -51,10 +51,10 @@ run;
 %*VALIDATION TEST STREAM;
 /* un-comment to re-validate
 
-%*_abend;
-%_abend(0);
+%_abend;
+%*_abend(0);
 %*_abend(1);
-%_abend(2);
+%*_abend(2);
 %_abend(3);
 %_abend(4);
 %_abend(5);
