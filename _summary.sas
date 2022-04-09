@@ -313,7 +313,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
     countfmt=%eval(&w-&d-1).0, pctfmt=pctfmt&w.., pfmt=&length..4, stat=countpct, 
     stdfmt=&w..&d, table=_column, total=0, alpha=0.05, freq=, means=, outpct=,
     indent=0, label=mixedcase, labellen=max, pctldef=5, round=0, vardef=df, 
-    id=, var=, class=_column, weight=1, mu0=0, model=, append=, file=, colorder=,
+    id=, var=, class=_column, weight=1, mu0=0, model=, append=, file=, colorder=, 
     col0=, col1=1, col2=((&col1)=0), col3=, col4=, 
     col5=, col6=, col7=, col8=, col9=, col10=, 
     head0=, head1=, head2=, head3=, head4=, 

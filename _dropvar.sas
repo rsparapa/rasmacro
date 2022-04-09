@@ -1,5 +1,5 @@
-%put NOTE: You have called the macro _DROPVAR, 2016-10-26.;
-%put NOTE: Copyright (c) 2014-2015 Rodney Sparapani;
+%put NOTE: You have called the macro _DROPVAR, 2021-10-20.;
+%put NOTE: Copyright (c) 2014-2021 Rodney Sparapani;
 %put;
 
 /*
@@ -53,7 +53,8 @@ proc format;
     ;
 run;
 
-%local char ccount cclause num ncount nclause missing mcount scratch var;
+%local i
+    char ccount cclause num ncount nclause nobs missing mcount scratch var;
 
 %let num=%_blist(data=&data, var=_numeric_, nofmt=1);
 %let ncount=%_count(&num);
@@ -61,9 +62,15 @@ run;
 %let char=%_blist(data=&data, var=_character_, nofmt=1);
 %let ccount=%_count(&char);
 
+%let nobs=%_nobs(data=&data);
+
 %if "&nonmissing"^="0" %then %do;
-    %let nclause=percent=100;
-    %let cclause=percent=100;
+        %let nclause=count=&nobs;
+        %let cclause=count=&nobs;
+/* the following two clauses mysteriously stopped working with SAS 9.4 TS1M6
+        %let nclause=percent=100;
+        %let cclause=percent=100;
+*/
 %end;
     
 proc freq data=&data;
@@ -71,8 +78,12 @@ proc freq data=&data;
     %let var=%scan(&num &char, &i, %str( ));
 
     %if "&nonmissing"="0" %then %do;
+        %let nclause=count=&nobs & put(&var,  missing11.)='Missing';
+        %let cclause=count=&nobs & put(&var, $missing11.)='Missing';
+/* the following two clauses mysteriously stopped working with SAS 9.4 TS1M6
         %let nclause=percent=100 & put(&var,  missing11.)='Missing';
         %let cclause=percent=100 & put(&var, $missing11.)='Missing';
+*/
     %end;
 
     %if &i<=&ncount %then %do;
@@ -91,15 +102,20 @@ run;
 
     %let mcount=%_nobs(data=&var, notes=);
 
-    %if &mcount=1 %then %let missing=&missing &var;
+    %if &mcount=1 %then %do;
+        %let missing=&missing &var;
+        proc print data=&var;
+        run;
+    %end;
 %end;
  
-%if %length(&missing) %then %do;
+%*if %length(&missing) %then %do;
 data &out;
     set &data;
-    drop &missing;
+%if %length(&missing) %then 
+    drop &missing;;
 run;
-%end;
+%*end;
 
 %if %length(&log) %then %_printto;
 

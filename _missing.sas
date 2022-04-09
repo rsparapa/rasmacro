@@ -1,5 +1,5 @@
-%put NOTE: You have called the macro _MISSING, 2014-11-13.;
-%put NOTE: Copyright (c) 2004 Rodney Sparapani;
+%put NOTE: You have called the macro _MISSING, 2022-01-01.;
+%put NOTE: Copyright (c) 2014-2022 Rodney Sparapani;
 %put;
 
 /*
@@ -21,8 +21,19 @@ along with this file; see the file COPYING.  If not, write to
 the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
-%macro _missing(data=&syslast, log=);
+/*  _MISSING Documentation
+    Drop variables that are completely missing.
+    
+    NAMED Parameters
+                
+    DATA=_LAST_     default SAS DATASET to use
 
+*/
+
+%macro _MISSING(data=&syslast, out=REQUIRED, log=);
+
+%_require(&out)
+    
 %if %length(&log) %then %_printto(log=&log);
 
 %let data=%upcase(&data);
@@ -39,7 +50,8 @@ proc format;
     ;
 run;
 
-%local char ccount num ncount missing mcount scratch var;
+%local i
+    char clause count ccount format num ncount nobs missing mcount scratch var;
 
 %let num=%_blist(data=&data, var=_numeric_, nofmt=1);
 %let ncount=%_count(&num);
@@ -47,64 +59,100 @@ run;
 %let char=%_blist(data=&data, var=_character_, nofmt=1);
 %let ccount=%_count(&char);
 
-proc freq data=&data;
-%do i=1 %to &ncount+&ccount;
-    %let var=%scan(&num &char, &i, %str( ));
+%let var=&num &char;
+%let count=%eval(&ccount+&ncount);
+%let nobs=%_nobs(data=&data);
 
-    %if &i<=&ncount %then %do;
-    format &var missing11.; 
-    tables &var / missing noprint out=&var(where=(percent=100 & put(&var, missing11.)='Missing'));
-    %end;
-    %else %do;
-    format &var $missing11.; 
-    tables &var / missing noprint out=&var(where=(percent=100 & put(&var, $missing11.)='Missing'));
-    %end;
-%end;
-run;
-
-%do i=1 %to &ncount+&ccount;
-    %let var=%scan(&num &char, &i, %str( ));
-
-    %let mcount=%_nobs(data=&var, notes=);
-
-    %if &mcount=1 %then %let missing=&missing &var;
-%end;
- 
-/*
-calls PROC FREQ too many times leading to lots of .log output and slowness
 %let scratch=%_scratch;
 
-%do i=1 %to &ncount+&ccount;
-    %let var=%scan(&num &char, &i, %str( ));
+data &scratch;
+    point=1;
+    set &data point=point;
+    output;
+    point=&nobs;
+    set &data point=point;
+    output;
+    stop;
+run;
+
+proc freq data=&scratch;
+%do i=1 %to &count;
+    %local var&i;
+    %let var&i=%scan(&var, &i, %str( ));
+    %if &i<=&ncount %then %let format=missing11.;
+    %else %let format=$missing11.;
+    format &&var&i &format;
+    tables &&var&i / missing noprint
+        out=&&var&i(where=(count=2 & put(&&var&i, &format)='Missing'));
+%end;
+run;
+
+%do i=1 %to &count;
+    %let mcount=%_nobs(data=&&var&i, notes=);
+
+    %if &mcount=0 %then %do;
+        %if &i<=&ncount %then %let num=%_tranw(&num, &&var&i, %str( ));
+        %else %let char=%_tranw(&char, &&var&i, %str( ));
+    %end;
+%end;
+ 
+%let var=&num &char;
+%let ncount=%_count(&num);
+%let ccount=%_count(&char);
+%let count=%eval(&ccount+&ncount);
+
+%if &count>0 %then %do;
 
 proc freq data=&data;
-    %if &i<=&ncount %then %do;
-    format &var missing11.; 
-    tables &var / missing noprint out=&scratch(where=(percent=100 & put(&var, missing11.)='Missing'));
-    %end;
-    %else %do;
-    format &var $missing11.; 
-    tables &var / missing noprint out=&scratch(where=(percent=100 & put(&var, $missing11.)='Missing'));
-    %end;
-run;
- 
-    %let mcount=%_nobs(data=&scratch, notes=);
-
-    %if &mcount=1 %then %let missing=&missing &var;
+%do i=1 %to &count;
+    %local var&i;
+    %let var&i=%scan(&var, &i, %str( ));
+    %if &i<=&ncount %then %let format=missing11.;
+    %else %let format=$missing11.;
+    format &&var&i &format;
+    tables &&var&i / missing noprint
+        out=&&var&i(where=(count=&nobs & put(&&var&i, &format)='Missing'));
 %end;
-*/
+run;
 
-%if %length(&missing) %then %do;
-data &data;
+%do i=1 %to &count;
+    %let mcount=%_nobs(data=&&var&i, notes=);
+
+    %if &mcount=1 %then %do;
+        %let missing=&missing &&var&i;
+        proc print data=&&var&i;
+        run;
+    %end;
+%end;
+
+%end;
+
+data &out;
     set &data;
-    drop &missing;
+%if %length(&missing) %then drop &missing;;
 run;
-%end;
 
 %if %length(&log) %then %_printto;
 
-%mend _missing;
+%mend _MISSING;
 
 %*VALIDATION TEST STREAM;
 /* un-comment to re-validate
+data check;
+    do i=1 to 10;
+        j=i;
+        k=i**2;
+        l=.;
+        m=1;
+        n=' ';
+        o=put(i, 2.);
+        q='a';
+        
+        output;
+    end;
+run;
+
+%_missing(data=check, out=check); *drop l and n;
+%_missing(data=check, out=check); *drop nothing;
+    
 */

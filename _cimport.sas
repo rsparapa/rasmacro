@@ -1,5 +1,5 @@
-%put NOTE: You have called the macro _CIMPORT, 2016-02-17.;
-%put NOTE: Copyright (c) 2004-2016 Rodney Sparapani;
+%put NOTE: You have called the macro _CIMPORT, 2021-12-27.;
+%put NOTE: Copyright (c) 2004-2021 Rodney Sparapani;
 %put;
 
 /*
@@ -139,6 +139,8 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 %if %length(&log) %then %_printto(log=&log);
 
 %local i j %_list(var0-var256); %* BEWARE: more than 256 variables is trouble!;                            
+
+%if "%upcase(&obs)"^="MAX" %then %let obs=%eval(&obs+&header);
 
 %if "%_datatyp(&header)"="NUMERIC" %then %do;
 data _null_;
