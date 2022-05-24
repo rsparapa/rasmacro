@@ -1,5 +1,5 @@
-%put NOTE: You have called the macro _CIMPORT, 2021-12-27.;
-%put NOTE: Copyright (c) 2004-2021 Rodney Sparapani;
+%put NOTE: You have called the macro _CIMPORT, 2022-05-23.;
+%put NOTE: Copyright (c) 2004-2022 Rodney Sparapani;
 %put;
 
 /*
@@ -97,6 +97,8 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
                             can be very time-consuming
                             therefore, if it is not sparse, 
                             you may want to try CHECK=100
+
+    LOWCASE=/UPCASE=        list of variables to lower/upper case
                             
     Common OPTIONAL Parameters
     
@@ -111,7 +113,9 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
     KEEP=
 
     OBS= 
-    
+
+    SORT=
+                                
     RENAME=
     
     WHERE=
@@ -126,9 +130,10 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
 %macro _cimport(file=REQUIRED, infile=&file, out=REQUIRED, attrib=, by=,
-    check=max, day0='01JAN1960'd, dlm=2C, eol=0d, drop=, informat=, length=200, 
-    linesize=32767, ls=&linesize, numdates=, firstobs=2, header=1, obs=max, 
-    nvars=, if=, index=, keep=, rename=, where=, log=%_null);
+    check=max, day0='01JAN1960'd, dlm=2C, eol=0d, drop=, informat=,
+    length=200, linesize=32767, ls=&linesize, lowcase=, numdates=,
+    firstobs=2, header=1, obs=max, nvars=, if=, index=, keep=, rename=,
+    sort=, upcase=, where=, log=%_null);
 
 %_require(&infile &out);
 
@@ -288,10 +293,24 @@ data &out;
     %if %length(&nvars) %then %do;
         %if &var0>&nvars %then drop _drop_:;;
     %end;
+
+    %if %length(&lowcase) %then %do;
+        %let lowcase=%_list(&lowcase);
+        %do j=1 %to %_count(&lowcase);
+        %scan(&lowcase, &j, %str( ))=lowcase(%scan(&lowcase, &j, %str( )));
+        %end;
+    %end;
+    
+    %if %length(&upcase) %then %do;
+        %let upcase=%_list(&upcase);
+        %do j=1 %to %_count(&upcase);
+        %scan(&upcase, &j, %str( ))=upcase(%scan(&upcase, &j, %str( )));
+        %end;
+    %end;
 run;
     
 %_sort(data=&out, out=&out, by=&by, drop=&drop, if=&if, index=&index,
-    keep=&keep, rename=&rename, where=&where);
+    keep=&keep, rename=&rename, sort=&sort, where=&where);
     
 %end;
 %else %do;

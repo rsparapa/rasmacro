@@ -1,4 +1,4 @@
-%put NOTE: You have called the macro _VERIFY, 2022-01-08.;
+%put NOTE: You have called the macro _VERIFY, 2022-05-21.;
 %put NOTE: Copyright (c) 2021-2022 Rodney Sparapani;
 %put;
 
@@ -44,12 +44,15 @@ over-ridden).
     LENGTH=         to over-ride the LENGTH of one or more
                     variables, e.g., LENGTH=AGE 8
 
+    MISSING=        if missing value is a non-blank character
+                    then specify it here
+
     LOG=            set to /dev/null to turn off .log                            
 
 */
 
 %macro _verify(var=_CHARACTER_, data=&syslast, out=REQUIRED,
-    length=, log=);
+    length=, missing=, log=);
 
 %_require(&out);
     
@@ -81,7 +84,8 @@ over-ridden).
        set &data end=last;
        %do i=1 %to &k;
            retain _&&var&i 0 _l&&var&i &&len&i;
-           if trim(left(&&var&i))^=' ' then
+           if trim(left(&&var&i))="&missing" then &&var&i=' ';
+           else if trim(left(&&var&i))^=' ' then
            _&&var&i=max(_&&var&i, verify(trim(left(&&var&i)),".0123456789"));
            
         if _&&var&i=0 then do;
@@ -116,7 +120,8 @@ over-ridden).
                 length _&&var&i &&len&i;
                 drop &&var&i;
                 rename _&&var&i=&&var&i;
-                _&&var&i=&&var&i;
+                if trim(left(&&var&i))="&missing" then;
+                else _&&var&i=&&var&i;
             %end;
         %end;
 
