@@ -1,5 +1,5 @@
-%put NOTE: You have called the macro _COUNT, 2008-08-27.;
-%put NOTE: Copyright (c) 2001-2008 Rodney Sparapani;
+%put NOTE: You have called the macro _COUNT, 2022-06-07.;
+%put NOTE: Copyright (c) 2001-2022 Rodney Sparapani;
 %put;
 
 /*
@@ -47,8 +47,12 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
     %do %while(%length(%qscan(&text, &i+1, &split)));
 	%let i=%eval(&i+1);
     %end;
-
-&i
+%if "%_substr(%superq(syswarningtext), 1, 27)"="Apparent symbolic reference"
+%then %do;
+    %put ERROR: _COUNT() cannot recover from warning: ABEND;
+    %_abend();
+%end;
+%else &i;
 
     %if %length(&notes) %then %put NOTE: _COUNT is returning the value: &i.;
 %mend _count;
@@ -56,7 +60,6 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 %*VALIDATION TEST STREAM.;
 
 /* un-comment to re-validate
-
 %put NOTE:  RETURN CODE=%_count('1 2 3 4 5');
 %put NOTE:  RETURN CODE=%_count(1 2 3 4 5);
 %put NOTE:  RETURN CODE=%_count( 1 2 3 4 5 );
@@ -69,11 +72,11 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 %put NOTE:  RETURN CODE=%_count(1%str(,)2%str(,)3%str(,)4%str(,)5, split=%str(,));
 
 %put NOTE:  RETURN CODE=%_count(=state='WI', split=''=);
+%put NOTE:  RETURN CODE=%_count(&notavar);
 
 endsas;
 
 Local Variables:
 ess-sas-submit-command-options: "-noautoexec"
 End:
-
 */
