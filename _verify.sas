@@ -47,12 +47,14 @@ over-ridden).
     MISSING=        if missing value is a non-blank character
                     then specify it here
 
-    LOG=            set to /dev/null to turn off .log                            
+    LOG=            set to /dev/null to turn off .log
+
+    LOGICAL=0       in order to convert TRUE to 1 and FALSE to 0    
 
 */
 
 %macro _verify(var=_CHARACTER_, data=&syslast, out=REQUIRED,
-    length=, missing=, log=);
+    length=, missing=, log=, logical=0);
 
 %_require(&out);
     
@@ -84,9 +86,18 @@ over-ridden).
        set &data end=last;
        %do i=1 %to &k;
            retain _&&var&i 0 _l&&var&i &&len&i;
+           %if &logical %then %do;
+               if trim(left(&&var&i))="TRUE" then &&var&i='1';
+               else if trim(left(&&var&i))="FALSE" then &&var&i='0';
+           %end;
            if trim(left(&&var&i))="&missing" then &&var&i=' ';
-           else if trim(left(&&var&i))^=' ' then
-           _&&var&i=max(_&&var&i, verify(trim(left(&&var&i)),"+-.0123456789"));
+           else if trim(left(&&var&i))^=' ' then do;
+               if substr(trim(left(&&var&i)), 1, 1) in('-', '+') then
+                   _&&var&i=max(_&&var&i,
+                   verify(substr(trim(left(&&var&i)), 2), ".0123456789"));
+               else
+               _&&var&i=max(_&&var&i, verify(trim(left(&&var&i)),".0123456789"));
+           end;
            
         if _&&var&i=0 then do;
            if  abs(&&var&i)^=floor(abs(&&var&i)) |
@@ -120,6 +131,10 @@ over-ridden).
                 length _&&var&i &&len&i;
                 drop &&var&i;
                 rename _&&var&i=&&var&i;
+                %if &logical %then %do;
+                    if trim(left(&&var&i))="TRUE" then &&var&i='1';
+                    else if trim(left(&&var&i))="FALSE" then &&var&i='0';
+                %end;
                 if trim(left(&&var&i))="&missing" then;
                 else _&&var&i=&&var&i;
             %end;
