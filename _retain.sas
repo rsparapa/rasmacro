@@ -1,5 +1,5 @@
-%put NOTE: You have called the macro _RETAIN, 2008-05-01.;
-%put NOTE: Copyright (c) 2001-2008 Rodney Sparapani;
+%put NOTE: You have called the macro _RETAIN, 2017-02-28.;
+%put NOTE: Copyright (c) 2001-2017 Rodney Sparapani;
 %put;
 
 /*
@@ -67,7 +67,8 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
     
     %local i j k index lo hi suffix var0;
 
-    %let var=%upcase(&var);
+    %let var=%qlowcase(&var);
+    %*let var=%upcase(&var);
     %let var0=%_count(text=%bquote(&var), split=&split);
     
     %do i=1 %to &var0;
@@ -102,8 +103,10 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
                 %let lo=%substr(%scan(&&var&i, 1, %str( )), &index);
                 %let hi=%substr(%_tail(&&var&i), &index);
                 %let suffix=%scan(&lo, 1, 0123456789);
-                %let lo=%scan(&lo, 1, _ABCDEFGHIJKLMNOPQRSTUVWXYZ);
-                %let hi=%scan(&hi, 1, _ABCDEFGHIJKLMNOPQRSTUVWXYZ);
+                %let lo=%scan(&lo, 1, _abcdefghijklmnopqrstuvwxyz);
+                %let hi=%scan(&hi, 1, _abcdefghijklmnopqrstuvwxyz);
+                %*let lo=%scan(&lo, 1, _ABCDEFGHIJKLMNOPQRSTUVWXYZ);
+                %*let hi=%scan(&hi, 1, _ABCDEFGHIJKLMNOPQRSTUVWXYZ);
                 %_array(array=&var, dim1=&lo:&hi, suffix=&suffix);
                 
                 do _i_=lbound(&var) to hbound(&var);
