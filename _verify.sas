@@ -1,4 +1,4 @@
-%put NOTE: You have called the macro _VERIFY, 2022-05-21.;
+%put NOTE: You have called the macro _VERIFY, 2022-06-09.;
 %put NOTE: Copyright (c) 2021-2022 Rodney Sparapani;
 %put;
 
@@ -86,7 +86,7 @@ over-ridden).
            retain _&&var&i 0 _l&&var&i &&len&i;
            if trim(left(&&var&i))="&missing" then &&var&i=' ';
            else if trim(left(&&var&i))^=' ' then
-           _&&var&i=max(_&&var&i, verify(trim(left(&&var&i)),".0123456789"));
+           _&&var&i=max(_&&var&i, verify(trim(left(&&var&i)),"+-.0123456789"));
            
         if _&&var&i=0 then do;
            if  abs(&&var&i)^=floor(abs(&&var&i)) |
