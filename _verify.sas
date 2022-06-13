@@ -1,4 +1,4 @@
-%put NOTE: You have called the macro _VERIFY, 2022-06-09.;
+%put NOTE: You have called the macro _VERIFY, 2022-06-13.;
 %put NOTE: Copyright (c) 2021-2022 Rodney Sparapani;
 %put;
 
@@ -84,6 +84,7 @@ over-ridden).
     %end;
    data _null_;
        set &data end=last;
+       length check $ 11;
        %do i=1 %to &k;
            retain _&&var&i 0 _l&&var&i &&len&i;
            %if &logical %then %do;
@@ -91,12 +92,15 @@ over-ridden).
                else if trim(left(&&var&i))="FALSE" then &&var&i='0';
            %end;
            if trim(left(&&var&i))="&missing" then &&var&i=' ';
-           else if trim(left(&&var&i))^=' ' & 0<=count(trim(left(&&var&i)), '.')<=1 then do;
-               if trim(left(&&var&i)) in:('-', '+') & length(trim(left(&&var&i)))>1 then
-                   _&&var&i=max(_&&var&i,
-                   verify(substr(trim(left(&&var&i)), 2), ".0123456789"));
+           else if trim(left(&&var&i))^=' ' then do;
+               if 0<=count(trim(left(&&var&i)), '.')<=1 then check=".0123456789";
+               else check="0123456789";
+               if trim(left(&&var&i)) in:('-', '+') &
+                       length(trim(left(&&var&i)))>1 then
+                       _&&var&i=max(_&&var&i,
+                       verify(substr(trim(left(&&var&i)), 2), trim(check)));
                else
-               _&&var&i=max(_&&var&i, verify(trim(left(&&var&i)),".0123456789"));
+                       _&&var&i=max(_&&var&i, verify(trim(left(&&var&i)), trim(check)));
            end;
            
         if _&&var&i=0 then do;
