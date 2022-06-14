@@ -1,4 +1,4 @@
-%put NOTE: You have called the macro _VERIFY, 2022-06-13.;
+%put NOTE: You have called the macro _VERIFY, 2022-06-14.;
 %put NOTE: Copyright (c) 2021-2022 Rodney Sparapani;
 %put;
 
@@ -84,7 +84,7 @@ over-ridden).
     %end;
    data _null_;
        set &data end=last;
-       length check $ 11;
+       length _check_ $ 11;
        %do i=1 %to &k;
            retain _&&var&i 0 _l&&var&i &&len&i;
            %if &logical %then %do;
@@ -93,14 +93,14 @@ over-ridden).
            %end;
            if trim(left(&&var&i))="&missing" then &&var&i=' ';
            else if trim(left(&&var&i))^=' ' then do;
-               if 0<=count(trim(left(&&var&i)), '.')<=1 then check=".0123456789";
-               else check="0123456789";
+               if 0<=count(trim(left(&&var&i)), '.')<=1 then _check_=".0123456789";
+               else _check_="0123456789";
                if trim(left(&&var&i)) in:('-', '+') &
                        length(trim(left(&&var&i)))>1 then
                        _&&var&i=max(_&&var&i,
-                       verify(substr(trim(left(&&var&i)), 2), trim(check)));
+                       verify(substr(trim(left(&&var&i)), 2), trim(_check_)));
                else
-                       _&&var&i=max(_&&var&i, verify(trim(left(&&var&i)), trim(check)));
+                       _&&var&i=max(_&&var&i, verify(trim(left(&&var&i)), trim(_check_)));
            end;
            
         if _&&var&i=0 then do;
@@ -154,4 +154,23 @@ over-ridden).
 
 %*VALIDATION TEST STREAM;
 /* un-comment to re-validate
+
+data check;
+length num1-num8 char1-char3 $ 14;
+input num1 $ num2 $ num3 $ num4 $ num5 $ num6 $ num7 $ num8 $
+    char1 $ char2 $ char3 $;
+cards;
+-1 .0 +8192 2097152 536870912 137438953472 35184372088832 35184372088833 0.0. -1-1 +2+2
+run;
+
+%_verify(data=check, out=check);
+
+proc contents varnum;
+run;
+
+proc print;
+    var num1  num2  num3  num4  num5  num6  num7  num8  char1  char2  char3; 
+    format num1-num8 best14.;
+run;
+
 */
