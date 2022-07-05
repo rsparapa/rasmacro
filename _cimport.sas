@@ -1,4 +1,4 @@
-%put NOTE: You have called the macro _CIMPORT, 2022-05-23.;
+%put NOTE: You have called the macro _CIMPORT, 2022-06-30.;
 %put NOTE: Copyright (c) 2004-2022 Rodney Sparapani;
 %put;
 
@@ -148,6 +148,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 %if "%upcase(&obs)"^="MAX" %then %let obs=%eval(&obs+&header);
 
 %if "%_datatyp(&header)"="NUMERIC" %then %do;
+%if &firstobs<&header %then %let firstobs=%eval(&header+1);
 data _null_;
     infile "&infile" dsd firstobs=&header obs=&header ls=&ls dlm="&eol.&dlm"x  
         %if %length(&nvars)=0 %then missover;;
