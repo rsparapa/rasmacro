@@ -1,5 +1,5 @@
-%put NOTE: You have called the macro _SUMMARY, 2020/04/22.;
-%put NOTE: Copyright (c) 2001-2020 Rodney Sparapani;
+%put NOTE: You have called the macro _SUMMARY, 2022/09/14;
+%put NOTE: Copyright (c) 2001-2022 Rodney Sparapani;
 %put;
 
 /*
@@ -725,7 +725,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 %local h i j k var0 _stat_ univstat univout univfmt freqstat freqout freqfmt
     len count index fmt fmtcount _ col11 comma arg0 arg1 arg2 arg3 temp 
     varnum pctlout scratch glmstat glmout glmfmt glmclass freqdata glmdata 
-    kwdata kwout kwfmt options;
+    kwdata kwout kwfmt options _index_;
 
 %_foot;
 %_title;
@@ -1965,8 +1965,10 @@ run;
                     the PROC FREQ statistics formats;
 		%let fmt=&univfmt &glmfmt &kwfmt &freqfmt;
 		%let fmtcount=%_count(&fmt);
-
-		data col&j(index=(%_by(&by)&&var&i.._index_=(%_by(&by) &&var&i _index_)));
+                %let _index_=%_substr(_%_by(&by)&&var&i, 1, 32);
+                
+		data col&j(index=(&_index_=(%_by(&by) &&var&i _index_)));
+		%*data col&j(index=(%_by(&by)&&var&i.._index_=(%_by(&by) &&var&i _index_)));
                     length col&j $ &length;
                     set col&j;
                     %*create the _INDEX_ dataset variable based on the order that
@@ -1995,7 +1997,8 @@ run;
 		run;
 
                 %if "%upcase(&&means&i)"="MISSING" %then %do;
-                data col&j(index=(%_by(&by)&&var&i.._index_=(%_by(&by) &&var&i _index_)));
+                data col&j(index=(&_index_=(%_by(&by) &&var&i _index_)));
+                %*data col&j(index=(%_by(&by)&&var&i.._index_=(%_by(&by) &&var&i _index_)));
                     set col&j;
                     by %_by(&by) &&var&i _index_;
                     if &&var&i=. & ^first._index_ then delete;
