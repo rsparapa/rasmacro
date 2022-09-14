@@ -1,4 +1,4 @@
-%put NOTE: You have called the macro _VERIFY, 2022-06-14.;
+%put NOTE: You have called the macro _VERIFY, 2022-08-31.;
 %put NOTE: Copyright (c) 2021-2022 Rodney Sparapani;
 %put;
 
@@ -74,8 +74,10 @@ over-ridden).
 %end;
 %else %do;
     %do i=1 %to &k;
-        %local var&i len&i max&i;
+        %local var&i len&i max&i lvar&i _var&i;
         %let var&i=%scan(&list, &i, %str( ));
+        %let lvar&i=%_substr(l&&var&i, 1, 32);
+        %let _var&i=%_substr(_&&var&i, 1, 32);
         %let len&i=3;
         %if &l>0 %then %do j=1 %to &l/2;
             %if "%scan(&length, 2*&j-1, %str( ))"="&&var&i"
@@ -86,7 +88,7 @@ over-ridden).
        set &data end=last;
        length _check_ $ 11;
        %do i=1 %to &k;
-           retain _&&var&i 0 _l&&var&i &&len&i;
+           retain &&_var&i 0 &&lvar&i &&len&i;
            %if &logical %then %do;
                if trim(left(&&var&i))="TRUE" then &&var&i='1';
                else if trim(left(&&var&i))="FALSE" then &&var&i='0';
@@ -97,32 +99,32 @@ over-ridden).
                else _check_="0123456789";
                if trim(left(&&var&i)) in:('-', '+') &
                        length(trim(left(&&var&i)))>1 then
-                       _&&var&i=max(_&&var&i,
+                       &&_var&i=max(&&_var&i,
                        verify(substr(trim(left(&&var&i)), 2), trim(_check_)));
                else
-                       _&&var&i=max(_&&var&i, verify(trim(left(&&var&i)), trim(_check_)));
+                       &&_var&i=max(&&_var&i, verify(trim(left(&&var&i)), trim(_check_)));
            end;
            
-        if _&&var&i=0 then do;
+        if &&_var&i=0 then do;
            if  abs(&&var&i)^=floor(abs(&&var&i)) |
                abs(&&var&i)>35184372088832 then
-               _l&&var&i=8;
+               &&lvar&i=8;
            else if abs(&&var&i)>137438953472 then
-               _l&&var&i=max(7, _l&&var&i);
+               &&lvar&i=max(7, &&lvar&i);
            else if abs(&&var&i)>536870912 then
-               _l&&var&i=max(6, _l&&var&i);
+               &&lvar&i=max(6, &&lvar&i);
            else if abs(&&var&i)>2097152 then
-               _l&&var&i=max(5, _l&&var&i);
+               &&lvar&i=max(5, &&lvar&i);
            else if abs(&&var&i)>8192 then
-               _l&&var&i=max(4, _l&&var&i);
+               &&lvar&i=max(4, &&lvar&i);
         end;
         %end;
     if last;
        retain numeric 0;
        %do i=1 %to &k;
-       if _&&var&i=0 then numeric+1;     
-       call symput("max&i", trim(left(_&&var&i)));
-       call symput("len&i", trim(left(_l&&var&i)));
+       if &&_var&i=0 then numeric+1;     
+       call symput("max&i", trim(left(&&_var&i)));
+       call symput("len&i", trim(left(&&lvar&i)));
        %end;
        call symput("numeric", trim(left(numeric)));
     run;
@@ -132,15 +134,15 @@ over-ridden).
             set &data;
         %do i=1 %to &k;
             %if &&max&i=0 %then %do;
-                length _&&var&i &&len&i;
+                length &&_var&i &&len&i;
                 drop &&var&i;
-                rename _&&var&i=&&var&i;
+                rename &&_var&i=&&var&i;
                 %if &logical %then %do;
                     if trim(left(&&var&i))="TRUE" then &&var&i='1';
                     else if trim(left(&&var&i))="FALSE" then &&var&i='0';
                 %end;
                 if trim(left(&&var&i))="&missing" then;
-                else _&&var&i=&&var&i;
+                else &&_var&i=&&var&i;
             %end;
         %end;
 
