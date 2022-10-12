@@ -1,4 +1,4 @@
-%put NOTE: You have called the macro _COLDDECK, 2022-05-18.;
+%put NOTE: You have called the macro _COLDDECK, 2022-10-12.;
 %put NOTE: Copyright (c) 2022 Rodney Sparapani;
 %put;
 
@@ -37,7 +37,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 %local i k n rename temp vars;
 %let n=%_nobs(data=&out);
-%let vars=%_blist(data=&out, var=&var);
+%let vars=%_blist(data=&out, var=&var, nofmt=1);
 %let k=%_count(&vars);
 
 %do i=1 %to &k;
@@ -80,4 +80,37 @@ run;
 
 %*VALIDATION TEST STREAM;
 /* un-comment to re-validate
+
+%let list=white black other hispanic male sbp pulse rr;
+
+libname pwd '.';
+
+proc import datafile='/data/shared/04224/NTDB/NTDB18.csv'
+    out=pwd.ntdb18;
+    guessingrows=max;
+run;
+*/
+
+/*
+
+%let list=white black other hispanic male sbp pulse rr;
+
+libname pwd '.';
+
+%_colddeck(data=pwd.ntdb18, out=ntdb18, var=&list, seed=21);
+
+data ntdb18;
+    set pwd.ntdb18 ntdb18(in=_imputed_);
+    imputed=_imputed_;
+run;
+
+proc means mean stddev min max nmiss;
+    class imputed;
+    var sbp pulse rr;
+run;
+
+proc freq;
+    tables imputed*male imputed*white*black*other / list missing;
+run;
+
 */
