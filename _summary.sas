@@ -1,4 +1,4 @@
-%put NOTE: You have called the macro _SUMMARY, 2022/09/14;
+%put NOTE: You have called the macro _SUMMARY, 2022/12/26;
 %put NOTE: Copyright (c) 2001-2022 Rodney Sparapani;
 %put;
 
@@ -56,6 +56,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
     ALPHA=0.05      the default alpha for confidence intervals
        
     APPEND=         file to append the table to, defaults to no appending
+                    TO-DO: smart handling of APPEND/FILE needs work
                     
     CLASS=_COLUMN   CLASS variable to be passed to PROC GLM for an ANOVA
                     or PROC NPAR1WAY for non-parametric ANOVA, a format can 
@@ -103,6 +104,8 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
                     the column of variable names; by default the 
                     Total column is set to Total (see COL# above)
                     
+    HTML=0          default to no HTML output
+        
     ID=             when STAT=MIN_MAX is specified, an identifier variable and 
                     the format to display it that corresponds to the min and max,
                     can be over-ridden by ID#=
@@ -310,10 +313,11 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 %macro _summary(data=&syslast, debug=, out=, split=\, offset=2, format=best7.,
     missing=Missing, varorder=, order=, max=99, w=8, d=1, length=%eval(&w+3),
-    countfmt=%eval(&w-&d-1).0, pctfmt=pctfmt&w.., pfmt=&length..4, stat=countpct, 
-    stdfmt=&w..&d, table=_column, total=0, alpha=0.05, freq=, means=, outpct=,
-    indent=0, label=mixedcase, labellen=max, pctldef=5, round=0, vardef=df, 
-    id=, var=, class=_column, weight=1, mu0=0, model=, append=, file=, colorder=, 
+    countfmt=%eval(&w-&d-1).0, html=0, pctfmt=pctfmt&w.., pfmt=&length..4,
+    stat=countpct, stdfmt=&w..&d, table=_column, total=0, alpha=0.05,
+    freq=, means=, outpct=, indent=0, label=mixedcase, labellen=max,
+    pctldef=5, round=0, vardef=df, id=, var=, class=_column, weight=1,
+    mu0=0, model=, append=, file=, colorder=, 
     col0=, col1=1, col2=((&col1)=0), col3=, col4=, 
     col5=, col6=, col7=, col8=, col9=, col10=, 
     head0=, head1=, head2=, head3=, head4=, 
@@ -941,6 +945,10 @@ run;
 
             footnote&foot0 %_lj(&&foot&foot0);
         %end;
+    %end;
+    %else %do;
+        %local fnhtml;
+        %let fnhtml=&file..html;
     %end;
 
     %let out=%_scratch(data=work);
@@ -2516,7 +2524,9 @@ run;
         page+1;
         call symput('page', trim(left(page)));
     run;
-
+    %sysexec which pandoc;
+    %if &sysrc=0 %then %sysexec pandoc -t html5 &file -o &fnhtml;
+    
     %let syslast=&out;
 %end;
 
