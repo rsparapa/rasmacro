@@ -1,5 +1,5 @@
-%put NOTE: You have called the macro _CHARNUM2, 2022-12-20.;
-%put NOTE: Copyright (c) 2022 Rodney Sparapani;
+%put NOTE: You have called the macro _CHARNUM2, 2023-01-02.;
+%put NOTE: Copyright (c) 2022-2023 Rodney Sparapani;
 %put;
 
 /*
@@ -23,11 +23,15 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 /*  _CHARNUM2 Documentation
     
-    Automatic character to numeric conversion.  
+    Automatic character to numeric conversion including dates.  
 
     REQUIRED Parameters
 
     DATA=_LAST_     default SAS DATASET to use
+
+    FORMAT=DATE7.   default date format
+
+    INFORMAT=ANYDTDTE. default date informat
     
     OUT=REQUIRED    SAS DATASET to create
 
@@ -45,7 +49,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
 %macro _charnum2(var=_CHARACTER_, data=&syslast, out=REQUIRED,
-    missing=, log=, logical=0);
+    format=date7., informat=anydtdte., missing=, log=, logical=0);
 
 %_require(&out);
     
@@ -84,6 +88,10 @@ run;
         data &&var&i;
             set &out(keep=&&var&i);
         run;
+
+        %let lval&i=0;
+        %do j=1 %to 2;
+           %if &&lval&i=0 %then %do;
         data &&_var&i;
            set &&var&i end=last;
            length &&_var&i 8;
@@ -91,11 +99,18 @@ run;
            drop &&var&i &&lvar&i;
            rename &&_var&i=&&var&i;
            if &&var&i &miss then;
-    %if &logical %then %do;
-        else if upcase(trim(left(&&var&i)))='FALSE' then &&_var&i=0;
-        else if upcase(trim(left(&&var&i)))='TRUE' then &&_var&i=1;
-    %end;
+           %if &j=2 %then %do;
+           else &&_var&i=inputn(trim(left(&&var&i)), "&informat",
+               length(trim(left(&&var&i))));
+           format &&_var&i &format;
+           %end;
+           %else %do;
+              %if &logical %then %do;
+           else if upcase(trim(left(&&var&i)))='FALSE' then &&_var&i=0;
+           else if upcase(trim(left(&&var&i)))='TRUE' then &&_var&i=1;
+              %end;
            else &&_var&i=&&var&i;
+           %end;
            output;
            if _error_ then do;
                _error_=0;
@@ -118,6 +133,8 @@ run;
                call symput("lval&i", trim(left(&&lvar&i)));
            end;
         run;
+           %end;
+        %end;
 
         %if &&lval&i %then %do;
             %let vars=&vars &&_var&i;
