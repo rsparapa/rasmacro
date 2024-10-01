@@ -1,5 +1,5 @@
-%put NOTE: You have called the macro _CHARNUM2, 2023-01-02.;
-%put NOTE: Copyright (c) 2022-2023 Rodney Sparapani;
+%put NOTE: You have called the macro _CHARNUM2, 2024-08-24.;
+%put NOTE: Copyright (c) 2022-2024 Rodney Sparapani;
 %put;
 
 /*
@@ -23,7 +23,14 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 /*  _CHARNUM2 Documentation
     
-    Automatic character to numeric conversion including dates.  
+    Automatic character to numeric conversion including dates.
+    Although not originally part of the intent, those variables
+    that are non-numeric character have their lengths optimized.
+    For example, working with SQL pass-through queries where
+    all character variables are arbitrarily long: 200 or 1024
+    even for values that are 8 characters or less (that is the
+    usual default).  This leads to massively over-sized data sets
+    and performance issues that are so easily addressed here.
 
     REQUIRED Parameters
 
@@ -38,25 +45,41 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
     VAR=_CHARACTER_ default to all character variables
     
     OPTIONAL Parameters
+  
+    R=0             1 sets defaults for R: LOGICAL=1 and MISSING=NA             
                 
+    LOGICAL=0       in order to convert TRUE to 1 and FALSE to 0  
+
+    FALSE=FALSE     default logical string that is a 0 
+                    with upper-casing of this value and the input
+                
+    TRUE=TRUE       default logical string that is a 1
+                    with upper-casing of this value and the input
+
     MISSING=        if missing value is a non-blank character
                     then specify it here
 
-    LOGICAL=0       in order to convert TRUE to 1 and FALSE to 0    
-
+    NUMLENMIN=3     minimum length for numeric variables
+    
     LOG=            set to /dev/null to turn off .log
-
 */
 
 %macro _charnum2(var=_CHARACTER_, data=&syslast, out=REQUIRED,
-    format=date7., informat=anydtdte., missing=, log=, logical=0);
+    format=date7., informat=anydtdte., missing=, numlenmin=3,
+    charlenmin=8, log=, logical=0, false=FALSE, true=TRUE, R=0);
 
 %_require(&out);
     
 %if %length(&log) %then %_printto(log=&log);
 
-%local all length list miss vars i j k l;
+%local all char length list miss vars i j k l;
 
+%if &R=1 %then %do;
+    %let logical=1;
+    %if %_indexw(&missing, NA)=0 %then %let missing=NA &missing;
+%end;
+
+%let char=;
 %let list=%_blist(var=&var, data=&data, nofmt=1);
 %let k=%_count(&list);
 
@@ -76,6 +99,9 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
         %let miss=in(&miss);
     %end;
 
+    %let false=%upcase(&false);
+    %let true=%upcase(&true);
+    
 data &out;
     set &data;
 run;
@@ -95,7 +121,7 @@ run;
         data &&_var&i;
            set &&var&i end=last;
            length &&_var&i 8;
-           retain &&lvar&i 3;
+           retain &&lvar&i &numlenmin;
            drop &&var&i &&lvar&i;
            rename &&_var&i=&&var&i;
            if &&var&i &miss then;
@@ -105,12 +131,21 @@ run;
            format &&_var&i &format;
            %end;
            %else %do;
+              /*  
+              %if %_indexc(&logical, .) %then %do;
+           else &&_var&i=inputn(trim(left(&&var&i)), "&logical",
+               length(trim(left(&&var&i))));
+              %end;  
+              %else 
+              */ 
               %if &logical %then %do;
-           else if upcase(trim(left(&&var&i)))='FALSE' then &&_var&i=0;
-           else if upcase(trim(left(&&var&i)))='TRUE' then &&_var&i=1;
+           else if upcase(trim(left(&&var&i)))="&FALSE" then &&_var&i=0;
+           else if upcase(trim(left(&&var&i)))="&TRUE" then &&_var&i=1;
               %end;
            else &&_var&i=&&var&i;
+           format &&_var&i;
            %end;
+           informat &&_var&i;
            output;
            if _error_ then do;
                _error_=0;
@@ -136,21 +171,49 @@ run;
            %end;
         %end;
 
-        %if &&lval&i %then %do;
-            %let vars=&vars &&_var&i;
+        %if "&&lval&i"="0" %then %do; *simple case: character;
+            %if "&&var&i"="_l_" %then %do;
+                %put ERROR: variable name _l_ is used for length;
+                %_abend;
+            %end;
+            data &&var&i; 
+                set &&var&i end=last;
+                retain &&lvar&i &charlenmin;
+                drop _l_ &&lvar&i;
+                if &&var&i &miss then do;
+                    _l_=0;
+                    &&var&i=' ';
+                end;
+                else _l_=length(&&var&i);
+                if _l_>&&lvar&i then &&lvar&i=_l_;
+                if last then
+                    call symput("lval&i", "$ "||trim(left(&&lvar&i)));
+            run;
+        %end;
+    
+        %if "&&lval&i"^="0" %then %do;
+            %if %index(&&lval&i, $) %then %do;
+                %let vars=&vars &&var&i;
+                %let char=&char &&var&i;
+            %end;
+            %else %let vars=&vars &&_var&i;
             %let length=&length &&var&i &&lval&i;
         %end;
-        %else %let vars=&vars &&var&i;
     %end;
 
 data &out;
     length &length;
     merge &out(drop=&list) &vars;
+    format &char;
+    informat &char;
+    /*
     array _char(*) _character_;
+    format _character_;
     drop i;
     do i=1 to hbound(_char);
         if _char(i) &miss then _char(i)=' ';
     end;
+    */
 run;
         
 %_vorder(data=&out, out=&out, var=&all);

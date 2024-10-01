@@ -1,4 +1,4 @@
-%put NOTE: You have called the macro _VERIFY, 2022-08-31.;
+%put NOTE: You have called the macro _VERIFY, 2022-12-14.;
 %put NOTE: Copyright (c) 2021-2022 Rodney Sparapani;
 %put;
 
@@ -60,7 +60,7 @@ over-ridden).
     
 %if %length(&log) %then %_printto(log=&log);
 
-%local list numeric i j k l;
+%local list numeric i j k l miss;
 
 %*let fmt=%_blist(var=&var, data=&data);
 
@@ -73,6 +73,17 @@ over-ridden).
 %put ERROR: variables "&var" not present on dataset &data;
 %end;
 %else %do;
+    %let j=%_count(&missing);
+    
+    %if &j=0 %then %let miss=in('');
+    %else %do;
+        %let miss="%scan(&missing, 1, %str( ))";
+        %do i=2 %to &j;
+            %let miss=&miss, "%scan(&missing, &i, %str( ))";
+        %end;
+        %let miss=in(&miss);
+    %end;
+
     %do i=1 %to &k;
         %local var&i len&i max&i lvar&i _var&i;
         %let var&i=%scan(&list, &i, %str( ));
@@ -93,9 +104,17 @@ over-ridden).
                if trim(left(&&var&i))="TRUE" then &&var&i='1';
                else if trim(left(&&var&i))="FALSE" then &&var&i='0';
            %end;
-           if trim(left(&&var&i))="&missing" then &&var&i=' ';
+           %*if trim(left(&&var&i))="&missing" then &&var&i=' ';
+           if trim(left(&&var&i)) &miss then &&var&i=' ';
            else if trim(left(&&var&i))^=' ' then do;
-               if 0<=count(trim(left(&&var&i)), '.')<=1 then _check_=".0123456789";
+               if 0<=count(trim(left(&&var&i)), '.')<=1 then do;
+                   _check_=".0123456789";
+/*
+                   if count(trim(left(upcase(&&var&i))), 'E')=1 then
+                       _check_="E.0123456789";
+                   else _check_=".0123456789";
+*/
+               end;
                else _check_="0123456789";
                if trim(left(&&var&i)) in:('-', '+') &
                        length(trim(left(&&var&i)))>1 then
@@ -141,8 +160,11 @@ over-ridden).
                     if trim(left(&&var&i))="TRUE" then &&var&i='1';
                     else if trim(left(&&var&i))="FALSE" then &&var&i='0';
                 %end;
-                if trim(left(&&var&i))="&missing" then;
-                else &&_var&i=&&var&i;
+                %*if trim(left(&&var&i))="&missing" then;
+                if trim(left(&&var&i)) &miss then;
+                else &&_var&i=inputn(trim(left(upcase(&&var&i))),
+                    trim(left(length(trim(left(&&var&i)))))||'.');
+                %*else &&_var&i=&&var&i;
             %end;
         %end;
 

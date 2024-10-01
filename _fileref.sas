@@ -61,6 +61,8 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 %macro _fileref(arg1, command=, file=&arg1, filename=REQUIRED, 
     fileref=&filename, option=, unique=0, out=);
 
+%_require(&fileref)
+    
 filename _&sysjobid pipe "/bin/ls -1 &option &file";;
 
 %local return scratch files i;

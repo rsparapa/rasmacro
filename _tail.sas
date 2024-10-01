@@ -49,5 +49,5 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 %put LIST=&list TAIL=%_tail(&list, split=\);
 
 %put TAIL=%_tail(/bnp/nonpar/binTbinO/.Rdata/N250p5q2g.2d2e.2m-1r.6/b.2/normal/par.41.rds, split=.);
-
 */
+

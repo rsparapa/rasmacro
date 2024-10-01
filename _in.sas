@@ -1,6 +1,6 @@
-*%put NOTE: You have called the macro _IN, 2014-01-07.;
-*%put NOTE: Copyright (c) 2002-2014 Rodney Sparapani;
-*%put;
+%*put NOTE: You have called the macro _IN, 2014-01-07.;
+%*put NOTE: Copyright (c) 2002-2024 Rodney Sparapani;
+%*put;
 
 /*
 Author:  Rodney Sparapani <rsparapa@mcw.edu>

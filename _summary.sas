@@ -1,5 +1,5 @@
-%put NOTE: You have called the macro _SUMMARY, 2022/12/26;
-%put NOTE: Copyright (c) 2001-2022 Rodney Sparapani;
+%put NOTE: You have called the macro _SUMMARY, 2024/10/01;
+%put NOTE: Copyright (c) 2001-2024 Rodney Sparapani;
 %put;
 
 /*
@@ -91,6 +91,12 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
                     necessary to produce the inferential statistics will be 
                     found in the listing (see DEBUG= above); defaults to the 
                     root of the program name followed by .txt if OUT= unset
+
+    FILEHTML=       the HTML file to create for the table; similar to FILE=
+                    
+    FILETEX=        the LaTeX file to create for the table; similar to FILE=
+
+    FILEPDF=        the PDF file to create from the LaTeX table; similar to FILE=
                     
     FORMAT=BEST7.   the default format to be used for the qualitative summary
                     of each variable, can be over-ridden by FORMAT#=
@@ -104,8 +110,6 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
                     the column of variable names; by default the 
                     Total column is set to Total (see COL# above)
                     
-    HTML=0          default to no HTML output
-        
     ID=             when STAT=MIN_MAX is specified, an identifier variable and 
                     the format to display it that corresponds to the min and max,
                     can be over-ridden by ID#=
@@ -132,6 +136,8 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
                     
     LABELLEN=MAX    default length for creation of SAS DATASET variable labels
                     over-ridden by the length of LABEL#=
+
+    LATEX=0         over-ride with 1 to create a table encoded in LaTeX
                     
     LENGTH=W+2      the default length of character variables to contain
                     numeric fields
@@ -313,11 +319,12 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 %macro _summary(data=&syslast, debug=, out=, split=\, offset=2, format=best7.,
     missing=Missing, varorder=, order=, max=99, w=8, d=1, length=%eval(&w+3),
-    countfmt=%eval(&w-&d-1).0, html=0, pctfmt=pctfmt&w.., pfmt=&length..4,
+    countfmt=%eval(&w-&d-1).0, pctfmt=pctfmt&w.., pfmt=&length..4,
     stat=countpct, stdfmt=&w..&d, table=_column, total=0, alpha=0.05,
     freq=, means=, outpct=, indent=0, label=mixedcase, labellen=max,
     pctldef=5, round=0, vardef=df, id=, var=, class=_column, weight=1,
-    mu0=0, model=, append=, file=, colorder=, 
+    mu0=0, model=, append=, colorder=, 
+    file=, filehtml=, filetex=, filepdf=, latex=0,
     col0=, col1=1, col2=((&col1)=0), col3=, col4=, 
     col5=, col6=, col7=, col8=, col9=, col10=, 
     head0=, head1=, head2=, head3=, head4=, 
@@ -729,7 +736,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 %local h i j k var0 _stat_ univstat univout univfmt freqstat freqout freqfmt
     len count index fmt fmtcount _ col11 comma arg0 arg1 arg2 arg3 temp 
     varnum pctlout scratch glmstat glmout glmfmt glmclass freqdata glmdata 
-    kwdata kwout kwfmt options _index_;
+    kwdata kwout kwfmt options _index_ dsid varlabel;
 
 %_foot;
 %_title;
@@ -912,8 +919,11 @@ proc format;
     
     value _column
     %do j=1 %to &col0-1;
+    &j="&&col&j"
+/*
         %let i=%_count(=&&col&j, split=""=);
         &j=%do h=1 %to &i; "%scan(=&&col&j, &h, ""=)" %end;
+*/
     %end;
         &col0="Total"
     ;
@@ -938,6 +948,9 @@ run;
         %_fn;
         
         %let file=&fntext;   
+        %if %length(&filehtml)=0 %then %let filehtml=&fnhtml;
+        %if %length(&filetex)=0 %then %let filetex=&fntex;
+        %if %length(&filepdf)=0 %then %let filepdf=&fnpdf;
         
         %if &foot0=0 | "&&foot&foot0"^="&fnpath" %then %do;
             %let foot0=%eval(&foot0+1);
@@ -946,9 +959,11 @@ run;
             footnote&foot0 %_lj(&&foot&foot0);
         %end;
     %end;
-    %else %do;
-        %local fnhtml;
-        %let fnhtml=&file..html;
+
+    %if %length(&filehtml)=0 %then %do;
+        %let j=%_indexc(&file,.);
+        %if &j>1 %then %let filehtml=%_substr(&file, 1, &j-1).html;
+        %else %let filehtml=&file..html;
     %end;
 
     %let out=%_scratch(data=work);
@@ -1503,6 +1518,23 @@ run;
             %let order&i=Yes\No;
             
         %if %length(&&char&i) | %length(&&order&i) %then %do;
+            %let dsid=%sysfunc(open(&out));
+            %let varlabel=%sysfunc(varlabel(&dsid, %sysfunc(varnum(&dsid, &&var&i))));
+            %let dsid=%sysfunc(close(&dsid)); 
+            data &out;
+                set &out;
+                _var&i._=&&var&i;
+            %if %length(&varlabel)=0 %then %let varlabel=&&var&i;
+            %if "%lowcase(&&label&i)"="mixedcase" | "%lowcase(&&label&i)"="mixed" %then
+                label _var&i._="%upcase(%_substr(&varlabel, 1, 1))%lowcase(%_substr(&varlabel, 2))";
+            %else %if "%lowcase(&&label&i)"="lowcase" | "%lowcase(&&label&i)"="lowercase" | "%lowcase(&&label&i)"="lower" %then
+                label _var&i._="%lowcase(&varlabel)";
+            %else %if "%lowcase(&&label&i)"="upcase" | "%lowcase(&&label&i)"="uppercase" | "%lowcase(&&label&i)"="upper" %then
+                label _var&i._="%upcase(&varlabel)";
+            %else label _var&i._="&varlabel";;
+            *copy the variable before reorder so that it does not impact column summaries;
+            run;
+            %let var&i=_var&i._;
             %_reorder(data=&out, out=&scratch, by=&by, format=%scan(&&format&i &&char&i, 1, %str( )), 
                 var=&&var&i, where=&&where&i, order=&&order&i, split=&split);
             %let format&i=%_substr(&&var&i, 1, 7)_.;
@@ -2333,6 +2365,11 @@ data col0(keep=%_by(&by) _var_ _lines_);
     end;
 run;
 
+%if &latex %then %do;
+footnote;
+options nodate nonumber;
+%end;
+
 data col0;
     merge col0 &out;
     by &by _var_;
@@ -2375,15 +2412,19 @@ run;
         %let var0=&h;
     %end;   
 
+%if &latex=1 %then 
+    %_printto(print=&filetex, append=&append, pageno=&page);
+%else
     %_printto(print=&file, append=&append, pageno=&page);
 
     %let options=%sysfunc(getoption(date)) %sysfunc(getoption(number));
     
 data _null_;
-    length _label_ $ &len0 tmp0 $ &len0 head0 $ %_max(%length(&head0), 1)
+    length _label_ $ %eval(&len0+&latex) 
+            tmp0 $ &len0 head0 $ %_max(%length(&head0), 1)
         %do i=1 %to &col0; 
-            col&i  $ %eval(&&len&i-&&beg&i) 
-            tmp&i  $ %eval(&&len&i-&&beg&i) 
+            col&i  $ %eval(&&len&i-&&beg&i+2*&latex) 
+            tmp&i  $ %eval(&&len&i-&&beg&i+3*&latex) 
             head&i $ %_max(%length(&&head&i), 1)
         %end;;
     set col0 end=eof;
@@ -2397,8 +2438,11 @@ data _null_;
     
     array col(0:&col0)  $ _label_ col1-col&col0;
     array _tmp(0:&col0)  $ tmp0-tmp&col0;
-    array _head(0:&col0) $ head0-head&col0 (%do i=0 %to &col0; "&&head&i " %end;);
-    array _len(0:&col0) _temporary_ (&len0 %do i=1 %to &col0; %eval(&&len&i-&&beg&i) %end;);
+    array _head(0:&col0) $ head0-head&col0 
+        (%do i=0 %to &col0; "&&head&i " %end;);
+    array _len(0:&col0) _temporary_ 
+        (%eval(&len0+&latex) 
+            %do i=1 %to &col0; %eval(&&len&i-&&beg&i+2*&latex) %end;);
 
     if _n_=1 then do;
         maxlines=%_ps-&foot0;
@@ -2422,6 +2466,7 @@ data _null_;
     *put;
     
     if (first._var_ & linesleft<_lines_<=maxlines) | %_first(&by) then do;
+
         link header;
         put;
     end;
@@ -2429,6 +2474,31 @@ data _null_;
     ptr=pad;
         
     do i=0, &colorder;
+        %if &latex %then %do;
+                col(i)=translate(col(i), '-', '_');
+                col(i)=tranwrd(col(i), '#', '\#');
+                col(i)=tranwrd(col(i), '$', '\$');
+                col(i)=tranwrd(col(i), '<=', '$\le$');
+                col(i)=tranwrd(col(i), '>=', '$\ge$');
+                col(i)=tranwrd(col(i), '<', '$<$');
+                col(i)=tranwrd(col(i), '>', '$>$');
+                
+            if i=0 then do;
+                col(i)=tranwrd(col(i), '%', '\%');
+                col(i)=tranwrd(col(i), '&', '\&');
+                col(i)=trim(left(col(i)))||'&';
+            end;
+            else do;
+                col(i)=tranwrd(col(i),  '%)', '\%');
+                col(i)=translate(col(i), '&& ', '(,)');
+                if i=%_tail(%_tail(%bquote(&colorder), split=%str(,))) then col(i)=trim(left(col(i)))||'\\';
+                else do;
+                j=count(col(i), '&');
+            %if "&outpct"="COL" | "&outpct"="NOROW" | "&outpct"="ROW" | "&outpct"="NOCOL" %then if j<2 then col(i)=trim(left(col(i)))||repeat('&', 1-j);  
+            %else if j<3 then col(i)=trim(left(col(i)))||repeat('&', 2-j);;
+            end;
+            end;
+        %end;
         put @(ptr) col(i) $char. @;
     
         ptr=ptr+_len(i)+pad;
@@ -2436,15 +2506,34 @@ data _null_;
     
     put;
     
-    if last._var_ & linesleft>&foot0 then put;
+    if last._var_ & linesleft>&foot0 then put %if &latex %then "\\\hline";;
 
+    %if &latex %then %do;
+        if eof then do;
+            put "\end{tabular}";
+            %*put "\end{center}";
+            put "\end{document}";
+        end;
+    %end;
+    
     call symput('page', trim(left(page)));
 return;
 
 header:
-    if _n_>1 then put _page_;
+    %if &latex %then %do;
+    if _n_=1 then do;
+        put "\documentclass{article}";
+        put "\begin{document}";
+        %*put "\begin{center}";
+        %if "&outpct"="COL" | "&outpct"="NOROW" | "&outpct"="ROW" | "&outpct"="NOCOL" %then
+        put "\begin{tabular}{l%_repeat(r, 2*%_tail(%_tail(%bquote(&colorder), split=%str(,))))} \hline";
+        %else
+        put "\begin{tabular}{l%_repeat(r, 3*%_tail(%_tail(%bquote(&colorder), split=%str(,))))} \hline";;
+    end;
+    %end;
+    %else if _n_>1 then put _page_;;
 
-    %if %length(&by) %then %do;
+    %if %length(&by) & &latex=0 %then %do;
         %let h=0;
         
         %do i=1 %to &title0;
@@ -2482,7 +2571,7 @@ header:
     %if &page=1 %then if page>1 then;
         put %_cj((Continued));
 */
-    if page>&page then put %_cj((Continued));
+    %if &latex=0 %then if page>&page then put %_cj((Continued));;
     *else put;
     
     put;
@@ -2491,6 +2580,19 @@ header:
         ptr=pad;
         
         do i=0, &colorder;
+            %if &latex=1 %then %do;
+                _tmp(i)=_head(i);
+                if i=0 then _tmp(i)=trim(left(_tmp(i)))||'&'; 
+                else if i=%_tail(%_tail(%bquote(&colorder), split=%str(,))) then
+                _tmp(i)=trim(left(_tmp(i)))||'\\';
+                else do;
+                j=count(_tmp(i), '&');
+            %if "&outpct"="COL" | "&outpct"="NOROW" | "&outpct"="ROW" | "&outpct"="NOCOL" %then if j<2 then _tmp(i)=trim(left(_tmp(i)))||repeat('&', 1-j);  
+            %else if j<3 then _tmp(i)=trim(left(_tmp(i)))||repeat('&', 2-j);;
+            end;
+                put @(ptr+max(0, j)) _tmp(i) $char. @;
+            %end;
+            %else %do;
             _tmp(i)=scan(_head(i), k, "&split");
     
             if _tmp(i)^='' then do;
@@ -2498,12 +2600,13 @@ header:
         
                 %let j=%_tail(%bquote(&colorder), split=%str(,));
                 %let j=%_tail(&j);
-                %let i=%length(&&head&j);
+                %let i=%eval(%length(&&head&j)+2*&latex);
                 %if &i=0 %then %let i=1;  
                         
                 if i=&j then put @(ptr+max(0, j)) _tmp(&j) $char&i.. @;
                 else put @(ptr+max(0, j)) _tmp(i) $char. @;
             end;
+            %end;
             
             ptr=ptr+_len(i)+pad;
         end;   
@@ -2519,13 +2622,43 @@ run;
 
     data _null_;
         retain page 2;
-        infile "&file";
+        %if &latex=1 %then infile "&filetex";
+        %else infile "&file";;
         input @'0c'x;
         page+1;
         call symput('page', trim(left(page)));
     run;
+    /*
     %sysexec which pandoc;
-    %if &sysrc=0 %then %sysexec pandoc -t html5 &file -o &fnhtml;
+    %if &sysrc=0 %then 
+        %sysexec pandoc -t html5 -o &fnhtml &file;
+    */
+%if "%_unwind(unix=UNIX)"="UNIX" %then %do;
+%if &latex %then %do;
+    %sysexec which tr > /dev/null;
+    %if &sysrc=0 %then %do;
+        %sysexec tr -d \\f < &filetex > &sysjobid..tex;
+        %sysexec cp &sysjobid..tex &filetex;
+    %sysexec which pdflatex > /dev/null;
+    %if &sysrc=0 %then %do;
+        %sysexec pdflatex &sysjobid..tex;
+        %if &sysrc=0 %then %do;
+        %sysexec mv &sysjobid..pdf &filepdf;
+        %sysexec rm &sysjobid..log;
+        %end;
+        %sysexec rm -f &sysjobid..aux &sysjobid..tex;
+    %end;
+    %end;
+%end;
+%else %do;
+    %sysexec which sed > /dev/null;
+    %if &sysrc=0 %then %do;
+        %sysexec echo "<pre><code>" > &filehtml;
+        %sysexec sed -e 's/&/\&amp;/' &file | sed -e 's/</\&lt;/' | sed -e 's/>/\&gt;/' | tr -d '\014' >> &filehtml;
+        %sysexec echo "</code></pre>" >> &filehtml;
+    %end;
+%end;
+%end;
     
     %let syslast=&out;
 %end;

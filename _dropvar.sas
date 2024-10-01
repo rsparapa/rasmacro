@@ -1,5 +1,5 @@
-%put NOTE: You have called the macro _DROPVAR, 2021-10-20.;
-%put NOTE: Copyright (c) 2014-2021 Rodney Sparapani;
+%put NOTE: You have called the macro _DROPVAR, 2022-11-26.;
+%put NOTE: Copyright (c) 2014-2022 Rodney Sparapani;
 %put;
 
 /*
@@ -24,6 +24,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 /*  _DROPVAR Documentation
     Drop variables that are completely missing or that are always
     the same value (based on their current format if any).
+    DEPRECATED: USE _CONSTANT INSTEAD.
     
     NAMED Parameters
                 
@@ -35,6 +36,9 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 %macro _DROPVAR(data=&syslast, out=REQUIRED, nonmissing=0, log=);
 
+%put ERROR: _DROPVAR IS DEPRECATED, USE _CONSTANT INSTEAD.;
+%_abend;
+    
 %_require(&out)
     
 %if %length(&log) %then %_printto(log=&log);

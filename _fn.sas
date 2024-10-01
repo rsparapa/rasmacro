@@ -1,5 +1,5 @@
-%put NOTE: You have called the macro _FN, 2022-12-26.;
-%put NOTE: Copyright (c) 2001-2022 Rodney Sparapani;
+%put NOTE: You have called the macro _FN, 2024-08-03.;
+%put NOTE: Copyright (c) 2001-2024 Rodney Sparapani;
 %put;
 
 /*
@@ -21,7 +21,7 @@ along with this file; see the file COPYING.  If not, write to
 the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
-%global fn fndir fnpath fnroot fntext fnhtml;
+%global fn fndir fnpath fnroot fntext fnhtml fntex fnpdf;
 
 %macro _fn;
 %if %length(&fn)=0 %then %do;
@@ -39,6 +39,8 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
         %let fndir=%substr(&fnpath, 1, %length(&fnpath)-%length(&fn));
         %let fntext=&fnroot..txt;
         %let fnhtml=&fnroot..html;
+        %let fntex=&fnroot..tex;
+        %let fnpdf=&fnroot..pdf;
 
         %put FN=&fn;
         %put FNROOT=&fnROOT;
@@ -46,6 +48,8 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
         %put FNDIR=&fnDIR;
         %put FNTEXT=&FNTEXT;
         %put FNHTML=&FNHTML;
+        %put FNTEX=&FNTEX;
+        %put FNPDF=&FNPDF;
     %end;
 %end;
 %mend _fn;
