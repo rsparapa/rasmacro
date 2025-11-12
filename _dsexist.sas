@@ -1,5 +1,5 @@
-%put NOTE: You have called the macro _DSEXIST, 2007-08-01.;
-%put NOTE: Copyright (c) 2001-2007 Rodney Sparapani;
+%put NOTE: You have called the macro _DSEXIST, 2025-07-22.;
+%put NOTE: Copyright (c) 2001-2025 Rodney Sparapani;
 %put;
 
 /*
@@ -23,7 +23,9 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 /* _DSEXIST Documentation
     Returns a one (true) if the requested SAS DATASET exists;
-    otherwise zero (false).
+    otherwise zero (false).  Workaround for a virtual SAS DATASET 
+    held within a database, represented by the special libref DB, 
+    always return one (true).
     
     POSITIONAL Parameters  
     
@@ -40,7 +42,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 %let lib=%_lib(&data);
 %let data=%_data(&data);
-
+%*put LIB=&lib;
 %if &lib=sashelp %then %do;
 	%if &data=vcatalg | &data=vcolumn | &data=vextfl | &data=vindex |
 		&data=vmacro | &data=vmember | &data=voption | &data=vtable |
@@ -48,6 +50,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 		&data=vslib | &data=vstable | &data=vstabvw | &data=vsview %then 1;
 	%else 0;
 %end;
+%else %if &lib=db %then 1;
 %else %do;
     %local suffix1 suffix2;
     %let suffix1=%_suffix;
