@@ -1,5 +1,5 @@
-%put NOTE: You have called the macro _SUBSTR, 2004-03-29.;
-%put NOTE: Copyright (c) 2001-2004 Rodney Sparapani;
+%put NOTE: You have called the macro _SUBSTR, 2025-12-20.;
+%put NOTE: Copyright (c) 2001-2025 Rodney Sparapani;
 %put;
 
 /*
@@ -42,9 +42,9 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 %let length=%length(&arg1);
 
 %if 0<&length & &arg2<=&length & &arg2>0 %then %do;
-    %if %length(&arg3)=0 %then %substr(&arg1, &arg2);
-    %else %if &arg3>&length-&arg2+1 %then %substr(&arg1, &arg2);
-    %else %if &arg3>0 %then %substr(&arg1, &arg2, &arg3);
+    %if %length(&arg3)=0 %then %substr(%bquote(&arg1), &arg2);
+    %else %if &arg3>&length-&arg2+1 %then %substr(%bquote(&arg1), &arg2);
+    %else %if &arg3>0 %then %substr(%bquote(&arg1), &arg2, &arg3);
 %end;
 
 %mend _substr;

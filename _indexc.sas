@@ -1,5 +1,5 @@
-%put NOTE: You have called the macro _INDEXC, 2004-03-29.;
-%put NOTE: Copyright (c) 2001-2004 Rodney Sparapani;
+%put NOTE: You have called the macro _INDEXC, 2025-12-20.;
+%put NOTE: Copyright (c) 2001-2025 Rodney Sparapani;
 %put;
 
 /*
@@ -38,7 +38,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 %let i=1;
 %let l=%length(&source);
 
-%do %while(&i<=&l & %index(&excerpt, %bquote(%_substr(&source, &i, 1)))=0);
+%do %while(&i<=&l & %index(%bquote(&excerpt), %bquote(%_substr(&source, &i, 1)))=0);
 	%let i=%eval(&i+1);
 %end;
 

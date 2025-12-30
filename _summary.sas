@@ -1,5 +1,5 @@
-%put NOTE: You have called the macro _SUMMARY, 2024/10/01;
-%put NOTE: Copyright (c) 2001-2024 Rodney Sparapani;
+%put NOTE: You have called the macro _SUMMARY, 2025/12/30;
+%put NOTE: Copyright (c) 2001-2025 Rodney Sparapani;
 %put;
 
 /*
@@ -2288,9 +2288,9 @@ run;
 %if %_nobs(data=&out)=0 %then 
     %put ERROR: SAS Dataset OUT=&out is empty.;
 %else %if %length(&file) %then %do;
-    %global page;
+    %global pageno;
 
-    %if %length(&page)=0 %then %let page=1;
+    %if %length(&pageno)=0 %then %let pageno=1;
     
     %local headers;
     %let outpct=%upcase(&outpct);
@@ -2413,9 +2413,9 @@ run;
     %end;   
 
 %if &latex=1 %then 
-    %_printto(print=&filetex, append=&append, pageno=&page);
+    %_printto(print=&filetex, append=&append, pageno=&pageno);
 %else
-    %_printto(print=&file, append=&append, pageno=&page);
+    %_printto(print=&file, append=&append, pageno=&pageno);
 
     %let options=%sysfunc(getoption(date)) %sysfunc(getoption(number));
     
@@ -2430,8 +2430,16 @@ data _null_;
     set col0 end=eof;
     by &by _var_;
     
-    retain page &page ls %_ls pad maxlines;
-    drop i j k ptr;
+/* 
+   need to be careful with variable names like PAGENO
+   if we are summarizing a variable by that name
+   then the output is buggy FIXME
+   for example, PAD was replaced with _PAD_
+   that is a far more unlikely variable name
+   however there is still a possibility of collision
+*/
+    retain pageno &pageno _ls_ %_ls _pad_ _maxlines_;
+    drop i j k _ptr_;
     
     file print footnotes linesleft=linesleft 
     %if %length(&by) %then notitles;;
@@ -2445,33 +2453,33 @@ data _null_;
             %do i=1 %to &col0; %eval(&&len&i-&&beg&i+2*&latex) %end;);
 
     if _n_=1 then do;
-        maxlines=%_ps-&foot0;
-        pad=0;
+        _maxlines_=%_ps-&foot0;
+        _pad_=0;
         
         do i=0, &colorder;
-            pad=pad+_len(i);
+            _pad_=_pad_+_len(i);
         end;
         
-        ptr=1;
+        _ptr_=1;
     
         do i=0, &colorder;
-            ptr=ptr+1;
+            _ptr_=_ptr_+1;
         end;
         
-        pad=ls-pad;
+        _pad_=_ls_-_pad_;
         
-        pad=max(1, floor(pad/ptr));
+        _pad_=max(1, floor(_pad_/_ptr_));
     end;    
     
     *put;
     
-    if (first._var_ & linesleft<_lines_<=maxlines) | %_first(&by) then do;
+    if (first._var_ & linesleft<_lines_<=_maxlines_) | %_first(&by) then do;
 
         link header;
         put;
     end;
 
-    ptr=pad;
+    _ptr_=_pad_;
         
     do i=0, &colorder;
         %if &latex %then %do;
@@ -2499,9 +2507,9 @@ data _null_;
             end;
             end;
         %end;
-        put @(ptr) col(i) $char. @;
+        put @(_ptr_) col(i) $char. @;
     
-        ptr=ptr+_len(i)+pad;
+        _ptr_=_ptr_+_len(i)+_pad_;
     end;
     
     put;
@@ -2516,7 +2524,7 @@ data _null_;
         end;
     %end;
     
-    call symput('page', trim(left(page)));
+    call symput('pageno', trim(left(pageno)));
 return;
 
 header:
@@ -2559,10 +2567,10 @@ header:
             %if &i=1 %then %do;
                 %if %index(&options,NODATE)=0 %then %do;
                     %if %index(&options,NONUMBER)=0 %then 
-                        @(ls-17) "&systime" @(ls-11) "&sysdate" @(ls-3) page 3.-r;
-                    %else @(ls-13) "&systime" @(ls-7) "&sysdate";
+                        @(_ls_-17) "&systime" @(_ls_-11) "&sysdate" @(_ls_-3) pageno 3.-r;
+                    %else @(_ls_-13) "&systime" @(_ls_-7) "&sysdate";
                 %end;
-                %else %if %index(&options,NONUMBER)=0 %then @(ls-3) page 3.-r;
+                %else %if %index(&options,NONUMBER)=0 %then @(_ls_-3) pageno 3.-r;
             %end;;
         %end;
     %end;
@@ -2571,13 +2579,13 @@ header:
     %if &page=1 %then if page>1 then;
         put %_cj((Continued));
 */
-    %if &latex=0 %then if page>&page then put %_cj((Continued));;
+    %if &latex=0 %then if pageno>&pageno then put %_cj((Continued));;
     *else put;
     
     put;
     
     do k=1 to &headers;
-        ptr=pad;
+        _ptr_=_pad_;
         
         do i=0, &colorder;
             %if &latex=1 %then %do;
@@ -2590,7 +2598,7 @@ header:
             %if "&outpct"="COL" | "&outpct"="NOROW" | "&outpct"="ROW" | "&outpct"="NOCOL" %then if j<2 then _tmp(i)=trim(left(_tmp(i)))||repeat('&', 1-j);  
             %else if j<3 then _tmp(i)=trim(left(_tmp(i)))||repeat('&', 2-j);;
             end;
-                put @(ptr+max(0, j)) _tmp(i) $char. @;
+                put @(_ptr_+max(0, j)) _tmp(i) $char. @;
             %end;
             %else %do;
             _tmp(i)=scan(_head(i), k, "&split");
@@ -2603,30 +2611,30 @@ header:
                 %let i=%eval(%length(&&head&j)+2*&latex);
                 %if &i=0 %then %let i=1;  
                         
-                if i=&j then put @(ptr+max(0, j)) _tmp(&j) $char&i.. @;
-                else put @(ptr+max(0, j)) _tmp(i) $char. @;
+                if i=&j then put @(_ptr_+max(0, j)) _tmp(&j) $char&i.. @;
+                else put @(_ptr_+max(0, j)) _tmp(i) $char. @;
             end;
             %end;
             
-            ptr=ptr+_len(i)+pad;
+            _ptr_=_ptr_+_len(i)+_pad_;
         end;   
             
         put;
     end;
     
-    page+1;
+    pageno+1;
 return;
 run;
 
     %_printto;    
 
     data _null_;
-        retain page 2;
+        retain pageno 2;
         %if &latex=1 %then infile "&filetex";
         %else infile "&file";;
         input @'0c'x;
-        page+1;
-        call symput('page', trim(left(page)));
+        pageno+1;
+        call symput('pageno', trim(left(pageno)));
     run;
     /*
     %sysexec which pandoc;
