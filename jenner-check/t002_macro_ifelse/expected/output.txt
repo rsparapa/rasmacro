@@ -1,0 +1,9 @@
+                                    _ifelse-driven classification of a small dataset                                    
+
+ n  verdict
+ 5  nonneg
+-3  neg
+ 0  nonneg
+17  nonneg
+-1  neg
+

@@ -1,0 +1,7 @@
+                                       _translate applied to a few sample strings                                       
+
+                        raw                      cleaned
+please dont eat the daisies  plxysx dont xyt thx dyzszxs
+please_dont_eat_the_daisies  ple.se.dont.e.t.the.d..s.es
+rasmacro-rsparapani          rasmacro_rsparapani
+

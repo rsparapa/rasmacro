@@ -1,0 +1,13 @@
+{
+  "_captured_at": "2026-07-11T06:05:00Z",
+  "_captured_run_id": "r_9f28cbe2dabd4e20b509c972c4a74a5d",
+  "status": "ok",
+  "exit_code": 0,
+  "log_contains": [
+    "NOTE: DATA _null_ completed. Output written to fileref scratch_note.txt",
+    "NOTE: Wrote work.filechecks (2 rows, 2 columns).",
+    "NOTE: PROC PRINT completed: 2 observations printed, 2 variables"
+  ],
+  "log_does_not_contain": ["ERROR:", "[JENNER-ERROR"],
+  "diagnostics": {"parse_warnings": [], "runtime_warnings": []}
+}

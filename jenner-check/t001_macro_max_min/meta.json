@@ -1,0 +1,7 @@
+{
+  "bundle": "t001_macro_max_min",
+  "source_file": "_max.sas, _min.sas",
+  "source_blob_sha": "_max.sas=88fc40683b41ea103a046baa4f4a1b79c97a0e9e; _min.sas=6fd8677e883d75556809f2888fada88c5c513460",
+  "source_commit": "f6c0808c1dff1b9da7aec286cf5ecb1f28f135e2",
+  "notes": "_max/_min are documented as two-parameter macro-language equivalents of the DATA step MAX()/MIN() functions, resolved at macro-compile time. Macro definitions copied verbatim from upstream; caller drives them over 5 literal (lo, hi) pairs to clip into [0,100] and prints via PROC PRINT. The macros' own commented validation-test-stream %put calls are exercised live as-is."
+}

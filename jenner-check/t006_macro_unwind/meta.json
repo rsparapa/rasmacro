@@ -1,0 +1,7 @@
+{
+  "bundle": "t006_macro_unwind",
+  "source_file": "_unwind.sas",
+  "source_blob_sha": "28030b49c15075f82e28851429d05afeae9b2caf",
+  "source_commit": "f6c0808c1dff1b9da7aec286cf5ecb1f28f135e2",
+  "notes": "_unwind is the library's OS-dispatch primitive, branching on the &sysscp automatic macro variable to pick a Unix/Windows/Mac/VMS/CMS/MVS-specific value; other rasmacro macros (_suffix, _dirchar) call it to stay platform-agnostic. Macro definition copied verbatim from upstream. Caller adapts the macro's own commented VALIDATION TEST STREAM (platform name and directory separator lookups) and lands the resolved values, including Jenner's own reported SYSSCP, into a dataset and prints it."
+}

@@ -1,0 +1,14 @@
+{
+  "_captured_at": "2026-07-11T06:15:00Z",
+  "_captured_run_id": "r_be1a2397400a49efbda5fb9bae250b63",
+  "status": "ok",
+  "exit_code": 0,
+  "log_contains": [
+    "PLATFORM=UNIX",
+    "DIRSEP=/",
+    "NOTE: Wrote work.platforminfo (3 rows, 2 columns).",
+    "NOTE: PROC PRINT completed: 3 observations printed, 2 variables"
+  ],
+  "log_does_not_contain": ["ERROR:", "[JENNER-ERROR"],
+  "diagnostics": {"parse_warnings": [], "runtime_warnings": []}
+}
