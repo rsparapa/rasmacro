@@ -1,0 +1,14 @@
+
+plxysx dont xyt thx dyzszxs
+ple.se.dont.e.t.the.d..s.es
+NOTE: Option OBS changed to 100.
+NOTE: DATA work.scrubbed
+
+
+NOTE: Wrote work.scrubbed (3 rows, 2 columns).
+NOTE: DATA elapsed:
+  wall  0.00 seconds
+  cpu   0.00 seconds
+NOTE: PROC PRINT data=work.scrubbed
+
+NOTE: PROC PRINT completed: 3 observations printed, 2 variables

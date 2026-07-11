@@ -1,0 +1,6 @@
+                              _exist checking a freshly-written file vs. a nonexistent one                              
+
+                           target  exists
+scratch_note.txt (just written)         1
+this_file_does_not_exist_anywhere       0
+

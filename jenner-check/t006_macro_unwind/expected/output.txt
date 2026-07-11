@@ -1,0 +1,7 @@
+                          _unwind dispatching on the engine's SYSSCP automatic macro variable                           
+
+          item  value
+sysscp          LIN
+_unwind branch  UNIX
+dir separator   /
+

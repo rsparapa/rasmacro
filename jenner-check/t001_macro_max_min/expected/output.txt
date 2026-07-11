@@ -1,0 +1,9 @@
+                                          _max/_min clipping bounds to [0,100]                                          
+
+label   lo   hi  clipped_lo  clipped_hi
+temp1   -5  120           0         100
+temp2   10   80          10          80
+temp3  -20  200           0         100
+temp4   15   60          15          60
+temp5    0  100           0         100
+

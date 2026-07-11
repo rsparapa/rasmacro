@@ -1,0 +1,7 @@
+                                      _repeat used to left-pad a few sample values                                      
+
+       label  padded
+pad to 5 zer  000009
+pad to 3 das  ---|
+no repeat     done
+

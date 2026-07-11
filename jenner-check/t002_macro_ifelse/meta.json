@@ -1,0 +1,7 @@
+{
+  "bundle": "t002_macro_ifelse",
+  "source_file": "_ifelse.sas",
+  "source_blob_sha": "cda4f4dca3fe5352af40a2ee0d617aad21b687c4",
+  "source_commit": "f6c0808c1dff1b9da7aec286cf5ecb1f28f135e2",
+  "notes": "_ifelse handles boolean expressions with embedded equal signs that would otherwise be misread as macro parameter assignments. Macro definition copied verbatim from upstream. Caller adapts the macro's own commented VALIDATION TEST STREAM (the RESULT= %put lines) and adds a small macro-loop-driven classification over 5 literal values, landed into a dataset and printed."
+}

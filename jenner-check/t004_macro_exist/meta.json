@@ -1,0 +1,7 @@
+{
+  "bundle": "t004_macro_exist",
+  "source_file": "_exist.sas",
+  "source_blob_sha": "dfcd01b6bbdcaece803317bdb268e963b84df8b8",
+  "source_commit": "f6c0808c1dff1b9da7aec286cf5ecb1f28f135e2",
+  "notes": "_exist is documented shorthand for %sysfunc(fileexist()). Macro definition copied verbatim from upstream. Caller writes a small file with a plain DATA _null_ step (mirroring the macro's own VALIDATION TEST STREAM pattern of checking a file expected to exist), then uses _exist to confirm it now exists (RC=1) alongside a name that does not exist (RC=0), landed into a dataset and printed."
+}

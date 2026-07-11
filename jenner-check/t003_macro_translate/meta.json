@@ -1,0 +1,7 @@
+{
+  "bundle": "t003_macro_translate",
+  "source_file": "_translate.sas",
+  "source_blob_sha": "8ef860b3cc504470f83dc6e1d4d8099768c4b4ac",
+  "source_commit": "f6c0808c1dff1b9da7aec286cf5ecb1f28f135e2",
+  "notes": "_translate wraps the DATA step TRANSLATE() function for use in macro-language %-code. Macro definition copied verbatim from upstream. Caller adapts the macro's own commented VALIDATION TEST STREAM examples and adds a third sample (translating a hyphen to an underscore in a repo-style name), landed into a dataset and printed."
+}
